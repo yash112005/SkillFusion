@@ -2,7 +2,7 @@
 > Connecting talent with opportunity through AI-powered skill assessments.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/SkillFusion/SkillFusion/actions)
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/yash112005/SkillFusion)
 [![React](https://img.shields.io/badge/React-18.x-blue.svg)](https://reactjs.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-20.x-green.svg)](https://nodejs.org/)
 
@@ -64,6 +64,11 @@ GOOGLE_CLIENT_ID=your_google_oauth_client_id
 | `POST` | `/api/resume/parse` | Upload and parse a resume PDF |
 | `GET` | `/api/jobs/matches` | Get recommended jobs based on skills |
 
+
+## 🚀 Launch Strategy
+- Start with all Pro features FREE for first 2 months (early access mode)
+- Add a feedback button on every result page
+- Track which features are used most
 
 ## 👨‍💻 Author
 **Yash Namdeo**

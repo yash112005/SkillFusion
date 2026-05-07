@@ -1,9 +1,6 @@
 import { Link } from "react-router-dom";
-import { useState } from "react";
-import image from "../assets/Gemini_Generated_Image_sgcsl0sgcsl0sgcs.png";
+import image from "../assets/Gemini_Generated_Image_9gwinw9gwinw9gwi.png";
 const Footer = () => {
-  const [imgError, setImgError] = useState(false);
-
   return (
     <footer className="bg-white dark:bg-dark-card border-t border-gray-200 dark:border-gray-800 pt-12 pb-8 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -11,30 +8,20 @@ const Footer = () => {
           <div className="col-span-1 md:col-span-2">
             <Link
               to="/"
-              className="mb-4 inline-block bg-white/10 p-2 rounded-xl backdrop-blur-sm"
+              className="mb-4 inline-flex items-center gap-2 transition-transform hover:scale-105"
             >
-              {!imgError ? (
+              {/* S-icon only from image */}
+              <div className="overflow-hidden flex-shrink-0" style={{width: '52px', height: '52px'}}>
                 <img
-                  src="/logo.png"
+                  src={image}
                   alt="SkillFusion Logo"
-                  className="h-12 w-auto object-contain"
-                  onError={() => setImgError(true)}
+                  className="h-14 w-auto object-contain object-left max-w-none"
                 />
-              ) : (
-                <div className="flex items-center gap-2">
-                  <div
-                    className="w-14 h-14 rounded-xl shadow-lg shadow-primary-500/30"
-                    style={{
-                      backgroundImage: `url(${image})`,
-                      backgroundSize: "cover",
-                      backgroundPosition: "center",
-                    }}
-                  />
-                  <span className="text-2xl font-bold font-display bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300">
-                    SkillFusion
-                  </span>
-                </div>
-              )}
+              </div>
+              {/* Theme-aware text */}
+              <span className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">
+                Skill<span className="text-primary-600 dark:text-primary-400">Fusion</span>
+              </span>
             </Link>
             <p className="text-gray-500 dark:text-gray-400 max-w-sm">
               Empowering candidates and recruiters with AI-driven resume and job

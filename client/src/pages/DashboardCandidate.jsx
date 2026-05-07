@@ -6,7 +6,10 @@ import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer 
 } from 'recharts';
 import { 
-  ArrowLeft, Download, RefreshCw, Bookmark, CheckCircle, AlertTriangle, Briefcase, Award, Zap, ChevronRight
+  ArrowLeft, Download, RefreshCw, Bookmark, CheckCircle, AlertTriangle, 
+  Briefcase, Award, Zap, ChevronRight, Building, MapPin, Clock, 
+  Search, FileText, BrainCircuit, Medal, ArrowRight, TrendingUp, Info, 
+  Play, Plus, List, Grid, Filter, Bell
 } from 'lucide-react';
 import Loader from '../components/Loader';
 
@@ -15,24 +18,33 @@ const DashboardCandidate = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [history, setHistory] = useState([]);
+  const [recommendedJobs, setRecommendedJobs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('analytics'); // 'analytics' | 'jobs'
+
 
   const latestMatch = location.state?.matchResult;
 
   useEffect(() => {
-    const fetchHistory = async () => {
+    const fetchData = async () => {
       try {
-        const res = await axios.get('/api/match/history', {
-          headers: { Authorization: `Bearer ${user?.token || ''}` }
-        });
-        setHistory(res.data);
+        const [historyRes, jobsRes] = await Promise.all([
+          axios.get('/api/match/history', {
+            headers: { Authorization: `Bearer ${user?.token || ''}` }
+          }),
+          axios.get('/api/jobs', {
+            headers: { Authorization: `Bearer ${user?.token || ''}` }
+          })
+        ]);
+        setHistory(historyRes.data);
+        setRecommendedJobs(jobsRes.data);
       } catch (err) {
-        console.error("Failed to fetch history", err);
+        console.error("Failed to fetch dashboard data", err);
       } finally {
         setLoading(false);
       }
     };
-    if (user?.token) fetchHistory();
+    if (user?.token) fetchData();
     else setLoading(false);
   }, [user]);
 
@@ -100,43 +112,74 @@ const DashboardCandidate = () => {
     return <Loader fullScreen={true} />;
   }
 
-  if (!displayMatch) {
-    return (
-      <div className="min-h-[calc(100vh-64px)] bg-gray-50 dark:bg-dark-bg flex flex-col items-center justify-center p-4">
-        <div className="card text-center py-20 max-w-md w-full animate-fade-in">
-          <AlertTriangle className="w-16 h-16 text-gray-400 mx-auto mb-6" />
-          <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">No matches yet</h3>
-          <p className="text-gray-500 dark:text-gray-400 mb-8 leading-relaxed">Upload your resume and a job description to generate your first comprehensive match report.</p>
-          <Link to="/upload" className="btn-primary w-full py-4 text-lg">Go to Upload</Link>
-        </div>
-      </div>
-    );
-  }
+  const renderEmptyState = () => (
+    <div className="card text-center py-20 max-w-md mx-auto animate-fade-in mt-12">
+      <AlertTriangle className="w-16 h-16 text-gray-400 mx-auto mb-6" />
+      <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">No matches yet</h3>
+      <p className="text-gray-500 dark:text-gray-400 mb-8 leading-relaxed">Upload your resume and a job description to generate your first comprehensive match report.</p>
+      <Link to="/upload" className="btn-primary w-full py-4 text-lg inline-block text-center">Go to Upload</Link>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-dark-bg pb-20">
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
         
-        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-          <button 
-            onClick={() => navigate('/upload')}
-            className="flex items-center text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors font-medium group"
-          >
-            <ArrowLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" />
-            Back to Upload
-          </button>
+        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+          <div className="flex gap-4">
+            <button 
+              onClick={() => navigate('/upload')}
+              className="flex items-center text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors font-medium group"
+            >
+              <ArrowLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" />
+              Back to Upload
+            </button>
+            <button 
+              onClick={() => navigate('/resume-builder')}
+              className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-bold shadow-sm"
+            >
+              <Briefcase className="w-5 h-5 mr-2" />
+              Build Resume
+            </button>
 
-          <div className={`px-6 py-2.5 rounded-full border-2 font-bold text-lg flex items-center shadow-sm ${getScoreBgColor(score)}`}>
-            {score}% MATCH {getEmoji(score)}
+          </div>
+
+          <div className="flex bg-gray-200 dark:bg-gray-800 p-1 rounded-xl shadow-inner">
+            <button
+              onClick={() => setActiveTab('analytics')}
+              className={`px-6 py-2 rounded-lg font-bold text-sm transition-all ${
+                activeTab === 'analytics' 
+                  ? 'bg-white dark:bg-dark-card text-primary-600 shadow-sm' 
+                  : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+              }`}
+            >
+              My Analytics
+            </button>
+            <button
+              onClick={() => setActiveTab('jobs')}
+              className={`px-6 py-2 rounded-lg font-bold text-sm transition-all ${
+                activeTab === 'jobs' 
+                  ? 'bg-white dark:bg-dark-card text-primary-600 shadow-sm' 
+                  : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+              }`}
+            >
+              Recommended Jobs
+            </button>
+
           </div>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          <div className="lg:col-span-2 space-y-8">
-            
-            <section className="card p-0 overflow-hidden">
+        {activeTab === 'analytics' && (
+          <>
+            {!displayMatch ? renderEmptyState() : (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                <div className="lg:col-span-2 space-y-8">
+                  <div className={`px-6 py-4 rounded-xl border-2 font-black text-xl flex justify-center items-center shadow-sm mb-4 ${getScoreBgColor(score)}`}>
+                    OVERALL MATCH SCORE: {score}% {getEmoji(score)}
+                  </div>
+                  <section className="card p-0 overflow-hidden">
               <div className="p-6 border-b border-gray-100 dark:border-gray-800 bg-white/50 dark:bg-dark-card/50">
                 <h2 className="text-xl font-bold flex items-center text-gray-900 dark:text-white">
                   <Zap className="w-5 h-5 mr-2 text-primary-500" /> Skills Match Analysis
@@ -175,6 +218,77 @@ const DashboardCandidate = () => {
                 </table>
               </div>
             </section>
+
+                <Link 
+                  to="/resume-builder" 
+                  className="w-full flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-gray-800 hover:border-primary-300 hover:shadow-sm transition-all group"
+                >
+                  <div className="flex items-center">
+                    <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-500 flex items-center justify-center mr-3 group-hover:scale-110 transition-transform">
+                      <FileText className="w-4 h-4" />
+                    </div>
+                    <span className="font-medium text-gray-700 dark:text-gray-300">Build Resume</span>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-primary-500 group-hover:translate-x-1 transition-all" />
+                </Link>
+
+                {/* Mock Interview Feature Card */}
+                <div className="mt-4 rounded-2xl overflow-hidden shadow-lg border border-purple-200 dark:border-purple-800/50 bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50 dark:from-purple-900/20 dark:via-indigo-900/20 dark:to-blue-900/20">
+                  <div className="p-5">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-md flex-shrink-0">
+                        <BrainCircuit className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-base font-bold text-gray-900 dark:text-white leading-tight">AI Mock Interview</h3>
+                        <span className="text-xs font-semibold px-2 py-0.5 bg-purple-100 dark:bg-purple-800/40 text-purple-700 dark:text-purple-300 rounded-full">Candidate Feature</span>
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 leading-relaxed">
+                      Practice with an AI interviewer tailored to your target role. Get real-time feedback on your answers, tone, and confidence.
+                    </p>
+                    <div className="flex items-center gap-2 mb-4 flex-wrap">
+                      {['Real-time feedback', 'Role-specific Q&A', 'Performance report'].map((tag) => (
+                        <span key={tag} className="text-xs px-2.5 py-1 rounded-full bg-white/70 dark:bg-gray-800/60 text-gray-700 dark:text-gray-300 border border-purple-200 dark:border-purple-700/50 font-medium">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                    <Link 
+                      to="/mock/interview" 
+                      className="w-full btn-primary bg-gradient-to-r from-purple-600 to-indigo-600 border-0 flex items-center justify-center gap-2 py-3 hover:scale-[1.02] hover:shadow-xl transition-all no-underline"
+                    >
+                      Start Practicing
+                      <ArrowRight className="w-4 h-4" />
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Gamified Badge Feature Card */}
+                <div className="mt-4 rounded-2xl overflow-hidden shadow-lg border border-yellow-200 dark:border-yellow-800/50 bg-gradient-to-br from-yellow-50 via-amber-50 to-orange-50 dark:from-yellow-900/20 dark:via-amber-900/20 dark:to-orange-900/20">
+                  <div className="p-5">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-yellow-500 to-orange-600 flex items-center justify-center shadow-md flex-shrink-0">
+                        <Medal className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-base font-bold text-gray-900 dark:text-white leading-tight">Your Match Badge</h3>
+                        <span className="text-xs font-semibold px-2 py-0.5 bg-yellow-100 dark:bg-yellow-800/40 text-yellow-700 dark:text-yellow-300 rounded-full">New Achievement</span>
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 leading-relaxed">
+                      View your personalized match badge, skill breakdown, and see where you rank among other top candidates.
+                    </p>
+                    <Link 
+                      to="/candidate-feedback" 
+                      className="w-full btn-primary bg-gradient-to-r from-yellow-600 to-orange-600 border-0 flex items-center justify-center gap-2 py-3 hover:scale-[1.02] hover:shadow-xl transition-all no-underline"
+                    >
+                      View Achievement
+                      <Award className="w-4 h-4" />
+                    </Link>
+                  </div>
+                </div>
+
 
             <section className="grid grid-cols-1 sm:grid-cols-3 gap-6">
               <div className="card flex flex-col items-center text-center p-6 bg-gradient-to-br from-white to-gray-50 dark:from-dark-card dark:to-gray-900 border-t-4 border-t-blue-500">
@@ -257,43 +371,132 @@ const DashboardCandidate = () => {
             </section>
           </div>
         </div>
+        )}
+        </>
+        )}
+
+        {activeTab === 'jobs' && (
+          <div className="space-y-6 animate-fade-in">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-black text-gray-900 dark:text-white">Recommended For You</h2>
+                <p className="text-gray-500 dark:text-gray-400 mt-1">Jobs matched to your profile based on AI scoring.</p>
+              </div>
+              <div className="relative">
+                <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input 
+                  type="text" 
+                  placeholder="Search jobs..." 
+                  className="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-dark-card text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 outline-none w-64"
+                />
+              </div>
+            </div>
+
+            {recommendedJobs.length === 0 ? (
+              <div className="card text-center py-20 max-w-md mx-auto">
+                <Briefcase className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">No jobs found</h3>
+                <p className="text-gray-500 dark:text-gray-400 mt-2">There are currently no job postings available.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {recommendedJobs.map((job) => (
+                  <div key={job._id} className="card p-6 flex flex-col hover:-translate-y-1 hover:shadow-xl transition-all duration-300 group">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <div className="flex items-center space-x-2 mb-2">
+                          <span className="px-2.5 py-1 bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 rounded-md text-xs font-bold uppercase">
+                            {job.type}
+                          </span>
+                        </div>
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white line-clamp-1">{job.title}</h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 flex items-center">
+                          <Building className="w-4 h-4 mr-1" /> {job.company}
+                        </p>
+                      </div>
+                      <div className={`w-14 h-14 rounded-full flex flex-col items-center justify-center border-4 ${
+                        job.matchScore >= 80 ? 'border-green-500 text-green-600 dark:text-green-400' :
+                        job.matchScore >= 60 ? 'border-yellow-500 text-yellow-600 dark:text-yellow-400' :
+                        'border-red-500 text-red-600 dark:text-red-400'
+                      }`}>
+                        <span className="text-lg font-black">{job.matchScore}</span>
+                        <span className="text-[10px] font-bold mt-[-4px]">%</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-4 space-x-4">
+                      <span className="flex items-center"><MapPin className="w-4 h-4 mr-1" /> {job.location}</span>
+                      <span className="flex items-center"><Clock className="w-4 h-4 mr-1" /> {job.experience?.min || 0}-{job.experience?.max || 0} Yrs</span>
+                    </div>
+
+                    <div className="mb-6 flex-1">
+                      <div className="flex flex-wrap gap-2">
+                        {job.skills.slice(0, 3).map((skill, i) => (
+                          <span key={i} className="px-2 py-1 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded text-xs font-medium">
+                            {skill}
+                          </span>
+                        ))}
+                        {job.skills.length > 3 && (
+                          <span className="px-2 py-1 bg-gray-100 dark:bg-gray-800 text-gray-500 rounded text-xs font-medium">
+                            +{job.skills.length - 3}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <Link 
+                      to={`/jobs/${job._id}`}
+                      className="w-full py-2.5 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white font-bold rounded-lg group-hover:bg-primary-600 group-hover:text-white transition-colors flex items-center justify-center text-sm"
+                    >
+                      View Details <ChevronRight className="w-4 h-4 ml-1" />
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+
 
       </div>
 
-      <div className="fixed bottom-0 left-0 w-full bg-white/90 dark:bg-dark-card/90 backdrop-blur-md border-t border-gray-200 dark:border-dark-border py-4 z-40 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] dark:shadow-[0_-10px_30px_rgba(0,0,0,0.2)]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4">
-          
-          <div className="text-sm text-gray-500 dark:text-gray-400 hidden md:block">
-            Report generated on {new Date().toLocaleDateString()}
-          </div>
-
-          <div className="flex items-center w-full sm:w-auto gap-3">
-            <button 
-              onClick={handleDownload}
-              className="flex-1 sm:flex-none flex items-center justify-center px-5 py-2.5 rounded-lg border-2 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Download PDF
-            </button>
+      {activeTab === 'analytics' && displayMatch && (
+        <div className="fixed bottom-0 left-0 w-full bg-white/90 dark:bg-dark-card/90 backdrop-blur-md border-t border-gray-200 dark:border-dark-border py-4 z-40 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] dark:shadow-[0_-10px_30px_rgba(0,0,0,0.2)]">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4">
             
-            <button 
-              onClick={() => { /* simulated save */ alert('Results saved to your profile!'); }}
-              className="flex-1 sm:flex-none flex items-center justify-center px-5 py-2.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-semibold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-            >
-              <Bookmark className="w-4 h-4 mr-2" />
-              Save
-            </button>
+            <div className="text-sm text-gray-500 dark:text-gray-400 hidden md:block">
+              Report generated on {new Date().toLocaleDateString()}
+            </div>
 
-            <button 
-              onClick={() => navigate('/upload')}
-              className="flex-1 sm:flex-none flex items-center justify-center px-6 py-2.5 rounded-lg bg-gradient-to-r from-primary-600 to-indigo-600 text-white font-bold hover:shadow-lg transition-all"
-            >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Analyze Again
-            </button>
+            <div className="flex items-center w-full sm:w-auto gap-3">
+              <button 
+                onClick={handleDownload}
+                className="flex-1 sm:flex-none flex items-center justify-center px-5 py-2.5 rounded-lg border-2 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Download PDF
+              </button>
+              
+              <button 
+                onClick={() => { /* simulated save */ alert('Results saved to your profile!'); }}
+                className="flex-1 sm:flex-none flex items-center justify-center px-5 py-2.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-semibold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              >
+                <Bookmark className="w-4 h-4 mr-2" />
+                Save
+              </button>
+
+              <button 
+                onClick={() => navigate('/upload')}
+                className="flex-1 sm:flex-none flex items-center justify-center px-6 py-2.5 rounded-lg bg-gradient-to-r from-primary-600 to-indigo-600 text-white font-bold hover:shadow-lg transition-all"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Analyze Again
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
       
     </div>
   );

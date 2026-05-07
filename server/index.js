@@ -38,6 +38,11 @@ app.use('/api/match', matchRoutes);
 app.use('/api/users', userRoutes);
 const jobRoutes = require('./routes/jobs');
 app.use('/api/jobs', jobRoutes);
+const resumeRoutes = require('./routes/resume');
+app.use('/api/resume', resumeRoutes);
+const interviewRoutes = require('./routes/interview');
+app.use('/api/interview', interviewRoutes);
+
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {

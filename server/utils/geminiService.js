@@ -1,5 +1,6 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 require("dotenv").config();
+const retryWithBackoff = require('./retryWithBackoff');
 
 const client = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -113,7 +114,7 @@ async function geminiaiAnalyzer(resumeText, jobText) {
   resumeText = cleaningText(resumeText);
   jobText    = cleaningText(jobText);
 
-  const model = client.getGenerativeModel({ model: "gemini-2.0-flash" });
+  const model = client.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 
   const prompt = `
@@ -283,6 +284,218 @@ function cleaningText(text) {
     .trim();
 }
 
+async function generateResumeContent(promptType, data, jobDescription = "") {
+  const model = client.getGenerativeModel({ model: "gemini-1.5-flash" });
+  let prompt = "";
+
+  if (promptType === "summary") {
+    prompt = `Write a professional resume summary (max 3-4 sentences) for a candidate with the following details: ${JSON.stringify(data)}.
+    ${jobDescription ? `Tailor the summary to align with this job description: ${jobDescription}` : ""}
+    Return ONLY the summary text.`;
+  } else if (promptType === "bullets") {
+    prompt = `Rewrite the following job experience description into 3-4 professional, ATS-friendly bullet points starting with strong action verbs.
+    Details: ${JSON.stringify(data)}.
+    ${jobDescription ? `Incorporate relevant keywords from this job description if applicable: ${jobDescription}` : ""}
+    Return the response as a JSON array of strings: ["bullet 1", "bullet 2", "bullet 3"]`;
+  } else if (promptType === "skills") {
+    prompt = `Based on the following candidate experience/summary: ${JSON.stringify(data)}, 
+    ${jobDescription ? `and this job description: ${jobDescription},` : ""}
+    suggest a list of 10-15 professional, relevant skills for their resume.
+    Return the response as a JSON array of strings: ["Skill 1", "Skill 2"]`;
+  }
+
+  try {
+    const result = await model.generateContent(prompt);
+    let text = result.response.text().trim();
+    if (promptType === "bullets" || promptType === "skills") {
+      text = text.replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
+      return JSON.parse(text);
+    }
+    return text;
+  } catch (err) {
+    console.error("Error generating resume content:", err);
+    throw new Error("Failed to generate content with AI");
+  }
+}
+
+
+
+async function generateInterviewQuestions(role, level, type, count) {
+  const model = client.getGenerativeModel({ model: "gemini-1.5-flash" });
+  
+  const prompt = `
+    You are an expert technical interviewer and career coach with 15+ years of experience hiring for top tech companies. 
+    Generate ${count} interview questions for a candidate with the following profile:
+    - Job Role: ${role}
+    - Experience Level: ${level}
+    - Interview Type: ${type}
+
+    Rules for questions:
+    - Match the difficulty to the experience level (${level})
+    - Make questions specific, realistic, and industry-standard
+    - For behavioral: use STAR-friendly prompts ("Tell me about a time...")
+    - For technical: ask about real concepts, trade-offs, or coding approaches
+    - For system design: ask candidates to design scalable, real-world systems
+    - For mixed: blend behavioral and technical questions evenly
+    - Never repeat questions across sessions
+
+    Return ONLY a valid JSON array of strings.
+    No markdown. No backticks. No numbering inside question strings. No extra text.
+
+    Format:
+    ["Question one?", "Question two?", "Question three?"]
+  `;
+
+  try {
+    const result = await retryWithBackoff(() => model.generateContent(prompt));
+    let text = result.response.text().trim();
+    // Clean potential markdown artifacts
+    text = text.replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
+    return JSON.parse(text);
+  } catch (err) {
+    console.error("Error generating interview questions:", err);
+    throw new Error("Failed to generate questions with AI");
+  }
+}
+
+async function evaluateInterviewAnswer(question, answer) {
+  const model = client.getGenerativeModel({ model: "gemini-1.5-flash" });
+  
+  const prompt = `
+    You are an expert technical interviewer and career coach with 15+ years of experience.
+    Evaluate the following interview answer and return ONLY a valid JSON object.
+
+    Question: "${question}"
+    Candidate Answer: "${answer}"
+
+    Scoring criteria:
+    - "great" → Answer is clear, structured, specific, and shows depth of knowledge or experience
+    - "good" → Answer is correct and reasonable but lacks detail, examples, or structure
+    - "needs improvement" → Answer is vague, off-topic, too short, or misses the core concept
+
+    Feedback rules:
+    - Always be constructive and encouraging, never harsh
+    - Point out strengths and provide specific advice for improvement (2-3 sentences).
+
+    Return ONLY a valid JSON object.
+    No markdown. No backticks. No extra text.
+
+    Format:
+    {"score": "great" | "good" | "needs improvement", "feedback": "Your 2–3 sentence feedback here."}
+  `;
+
+  try {
+    const result = await retryWithBackoff(() => model.generateContent(prompt));
+    let text = result.response.text().trim();
+    // Clean potential markdown artifacts
+    text = text.replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
+    return JSON.parse(text);
+  } catch (err) {
+    console.error("Error evaluating interview answer:", err);
+    throw new Error("Failed to evaluate answer with AI");
+  }
+}
+
+async function multiJDCompare(resumeText, jds = []) {
+  if (!jds.length) return [];
+
+  const model = client.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+  const results = [];
+  
+  for (const jd of jds) {
+    const prompt = `
+      Resume: ${resumeText.substring(0, 5000)}
+      Job Description (@ ${jd.company || 'Unknown'} - ${jd.role || 'Unknown'}): ${jd.text.substring(0, 5000)}
+
+      Analyze the fit between the resume and this specific job description.
+      Provide a detailed analysis following these rules:
+      1. Match score (0-100) weighted: skills 40%, experience level 30%, domain/industry 20%, location/remote fit 10%.
+      2. Matched skills: list keywords/skills from the resume that appear in the JD.
+      3. Missing skills / gaps: required/preferred skills in the JD absent from the resume.
+      4. Seniority alignment: Does the candidate's experience match the JD's required level? (Labels: "under", "over", "match").
+      5. ATS red flags: Important keywords from the JD missing from the resume.
+      6. Tailoring tip: One specific, actionable suggestion.
+
+      Return strictly in JSON format:
+      {
+        "company": "${jd.company || 'Unknown'}",
+        "role": "${jd.role || 'Unknown'}",
+        "score": 0,
+        "matchedSkills": [],
+        "missingSkills": [],
+        "seniority": "match",
+        "atsRedFlags": [],
+        "tailoringTip": "",
+        "quickVerdict": "A short 1-sentence summary"
+      }
+    `;
+
+    try {
+      const result = await retryWithBackoff(() => model.generateContent(prompt));
+      let text = result.response.text().trim();
+      text = text.replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
+      const parsed = JSON.parse(text);
+      results.push(parsed);
+    } catch (err) {
+      console.error(`Error comparing for ${jd.company}:`, err);
+      results.push({
+        company: jd.company || 'Unknown',
+        role: jd.role || 'Unknown',
+        score: 0,
+        error: "Failed to analyze this JD"
+      });
+    }
+  }
+
+  // Calculate Best Bet
+  const sorted = [...results].sort((a, b) => b.score - a.score);
+  const bestBet = sorted[0];
+
+  return {
+    comparisons: sorted,
+    bestBet: {
+      recommendation: bestBet ? `Your best bet is ${bestBet.role} at ${bestBet.company}.` : "No recommendation available.",
+      reason: bestBet ? `It has the highest match score of ${bestBet.score}/100 and aligns well with your ${bestBet.seniority === 'match' ? 'experience level' : 'background'}.` : ""
+    }
+  };
+}
+
+async function generateJDRefinements(jobTitle, currentJD, applicantData) {
+  const model = client.getGenerativeModel({ model: "gemini-1.5-flash" });
+  
+  const prompt = `
+    You are an expert recruitment consultant. Analyze the following recruitment data and provide 2-4 specific, actionable suggestions for the recruiter to improve the Job Description (JD).
+    
+    Job Title: ${jobTitle}
+    Current JD (excerpt): ${currentJD.substring(0, 2000)}
+    
+    Applicant Data:
+    - Total Applicants: ${applicantData.total}
+    - Average Match Score: ${applicantData.avgScore}
+    - Most Frequently Matched Skills: ${applicantData.topSkills.join(", ")}
+    - Most Frequently Missing Skills: ${applicantData.missingSkills.join(", ")}
+    
+    Rules for suggestions:
+    - Be direct and analytical.
+    - Format as a JSON array of strings.
+    - Suggestions should focus on JD quality, filtering accuracy, and pool quality.
+    - Example: "Consider removing 'Kubernetes' as a hard requirement — 68% of applicants lack it, which may be filtering strong candidates unnecessarily."
+    
+    Return ONLY a valid JSON array of strings.
+  `;
+
+  try {
+    const result = await retryWithBackoff(() => model.generateContent(prompt));
+    let text = result.response.text().trim();
+    text = text.replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
+    return JSON.parse(text);
+  } catch (err) {
+    console.error("Error generating JD refinements:", err);
+    return ["Consider reviewing skill requirements for better alignment with the candidate pool."];
+  }
+}
+
 module.exports = {
   getEmbedding,
   geminiaiAnalyzer,
@@ -290,5 +503,12 @@ module.exports = {
   matchProjectsToJob,
   cosineSimilarity,
   cleaningText,
+  generateResumeContent,
+  generateInterviewQuestions,
+  evaluateInterviewAnswer,
+  multiJDCompare,
+  generateJDRefinements
 };
+
+
 

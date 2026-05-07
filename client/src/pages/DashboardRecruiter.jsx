@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { 
   Users, FileText, Activity, ArrowUpRight, Plus, 
   Search, Filter, MoreVertical, Edit, Trash2, 
-  ExternalLink, MapPin, Clock, Calendar, AlertCircle
+  ExternalLink, MapPin, Clock, Calendar, AlertCircle, Briefcase, Medal
 } from 'lucide-react';
 import Loader from '../components/Loader';
 
@@ -222,6 +222,7 @@ const DashboardRecruiter = () => {
                   <th className="px-6 py-4 font-medium">Candidate</th>
                   <th className="px-6 py-4 font-medium">Applied Role</th>
                   <th className="px-6 py-4 font-medium text-center">Match Score</th>
+                  <th className="px-6 py-4 font-medium text-center">Badge</th>
                   <th className="px-6 py-4 font-medium">Status</th>
                   <th className="px-6 py-4 font-medium text-right">Action</th>
                 </tr>
@@ -236,13 +237,26 @@ const DashboardRecruiter = () => {
                         {app.score}%
                       </div>
                     </td>
+                    <td className="px-6 py-4 text-center">
+                      <button 
+                        onClick={() => navigate('/candidate-feedback')}
+                        className={`p-2 rounded-lg transition-all transform hover:scale-110 ${app.score >= 80 ? 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30' : app.score >= 50 ? 'bg-gray-100 text-gray-500' : 'bg-orange-100 text-orange-600'}`}
+                        title="View Gamified Badge"
+                      >
+                        <Medal className="w-5 h-5" />
+                      </button>
+                    </td>
                     <td className="px-6 py-4">
                       <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-tighter ${app.status === 'Interview' ? 'bg-blue-100 text-blue-700' : app.status === 'Reviewed' ? 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300' : 'bg-orange-100 text-orange-700'}`}>
                         {app.status}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button className="text-primary-600 dark:text-primary-400 hover:scale-110 transition-transform p-2 bg-primary-50 dark:bg-primary-900/20 rounded-lg">
+                      <button 
+                        onClick={() => navigate(`/dashboard/recruiter/candidate/${app.id}`)}
+                        className="text-primary-600 dark:text-primary-400 hover:scale-110 transition-transform p-2 bg-primary-50 dark:bg-primary-900/20 rounded-lg"
+                        title="View Full Analytics"
+                      >
                         <ArrowUpRight className="w-5 h-5" />
                       </button>
                     </td>

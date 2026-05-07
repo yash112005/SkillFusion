@@ -11,11 +11,19 @@ import DashboardRecruiter from './pages/DashboardRecruiter';
 import JobDetails from './pages/JobDetails';
 import DashboardAdmin from './pages/DashboardAdmin';
 import PostJob from './pages/PostJob';
+import CandidateAnalytics from './pages/CandidateAnalytics';
 import Pricing from './pages/Pricing';
 import About from './pages/About';
 import Contact from './pages/Contact';
 import FAQ from './pages/FAQ';
+import ResumeBuilder from './pages/ResumeBuilder';
+import Interview from './pages/Interview';
+import Profile from './pages/Profile';
+import MultiMatch from './pages/MultiMatch';
+import GamifiedCandidateFeedback from './components/GamifiedCandidateFeedback';
+
 import Loader from './components/Loader';
+import SkillyChat from './components/SkillyChat';
 import { useAuth } from './context/AuthContext';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -56,9 +64,39 @@ function App() {
               </ProtectedRoute>
             } />
 
+            <Route path="/multi-match" element={
+              <ProtectedRoute allowedRoles={['candidate']}>
+                <MultiMatch />
+              </ProtectedRoute>
+            } />
+
             <Route path="/dashboard/candidate" element={
               <ProtectedRoute allowedRoles={['candidate']}>
                 <DashboardCandidate />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/resume-builder" element={
+              <ProtectedRoute allowedRoles={['candidate']}>
+                <ResumeBuilder />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/mock/interview" element={
+              <ProtectedRoute allowedRoles={['candidate']}>
+                <Interview />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/candidate-feedback" element={
+              <ProtectedRoute allowedRoles={['candidate', 'recruiter']}>
+                <GamifiedCandidateFeedback />
               </ProtectedRoute>
             } />
 
@@ -71,6 +109,12 @@ function App() {
             <Route path="/dashboard/recruiter" element={
               <ProtectedRoute allowedRoles={['recruiter']}>
                 <DashboardRecruiter />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/dashboard/recruiter/candidate/:id" element={
+              <ProtectedRoute allowedRoles={['recruiter']}>
+                <CandidateAnalytics />
               </ProtectedRoute>
             } />
 
@@ -94,6 +138,7 @@ function App() {
           </Routes>
         </main>
         <Footer />
+        <SkillyChat />
       </div>
     </Router>
   );

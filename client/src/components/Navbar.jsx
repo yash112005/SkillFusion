@@ -12,13 +12,12 @@ import {
   LogOut,
   LayoutDashboard,
 } from "lucide-react";
-import image from "../assets/Gemini_Generated_Image_sgcsl0sgcsl0sgcs.png";
+import image from "../assets/Gemini_Generated_Image_9gwinw9gwinw9gwi.png";
 const Navbar = () => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [imgError, setImgError] = useState(false);
   const location = useLocation();
   const dropdownRef = useRef(null);
 
@@ -49,6 +48,7 @@ const Navbar = () => {
     { name: "Services", path: "/services" },
     { name: "Upload", path: "/upload" },
     { name: "Results", path: "/results" },
+    { name: "Build Resume", path: "/resume-builder" },
     { name: "Pricing", path: "/pricing" },
     { name: "Contact", path: "/contact" },
   ];
@@ -58,29 +58,20 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
           <div className="flex-shrink-0 flex items-center">
-            <Link to="/" className="flex items-center gap-2">
-              {!imgError ? (
+            <Link to="/" className="flex items-center gap-2 group transition-transform hover:scale-105">
+              {/* Show only the S-icon part of the image */}
+              <div className="overflow-hidden flex-shrink-0" style={{width: '56px', height: '56px'}}>
                 <img
-                  src="/logo.png"
+                  src={image}
                   alt="SkillFusion Logo"
-                  className="h-12 md:h-14 w-auto object-contain transition-transform hover:scale-105"
-                  onError={() => setImgError(true)}
+                  className="h-14 md:h-20 w-auto object-contain object-left max-w-none"
+                  style={{marginLeft: '0'}}
                 />
-              ) : (
-                <>
-                  <div
-                    className="w-14 h-14 rounded-xl shadow-lg shadow-primary-500/30"
-                    style={{
-                      backgroundImage: `url(${image})`,
-                      backgroundSize: "cover",
-                      backgroundPosition: "center",
-                    }}
-                  />
-                  <span className="text-2xl font-bold font-display bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 hidden sm:block">
-                    SkillFusion
-                  </span>
-                </>
-              )}
+              </div>
+              {/* Text rendered in HTML so color adapts to theme */}
+              <span className="text-xl md:text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+                Skill<span className="text-primary-600 dark:text-primary-400">Fusion</span>
+              </span>
             </Link>
           </div>
 
@@ -148,6 +139,13 @@ const Navbar = () => {
                     >
                       <LayoutDashboard className="w-4 h-4 mr-3" />
                       Dashboard
+                    </Link>
+                    <Link
+                      to="/profile"
+                      className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-bg hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                    >
+                      <UserIcon className="w-4 h-4 mr-3" />
+                      Profile
                     </Link>
                     <div className="h-px bg-gray-100 dark:bg-dark-border my-2"></div>
                     <button
@@ -240,6 +238,13 @@ const Navbar = () => {
               >
                 <LayoutDashboard className="w-5 h-5 mr-3" />
                 Dashboard
+              </Link>
+              <Link
+                to="/profile"
+                className="flex items-center px-4 py-3 rounded-xl text-base font-medium text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/10 hover:bg-primary-100 dark:hover:bg-primary-900/20"
+              >
+                <UserIcon className="w-5 h-5 mr-3" />
+                Profile
               </Link>
               <button
                 onClick={logout}

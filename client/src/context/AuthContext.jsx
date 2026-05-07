@@ -80,8 +80,15 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const updateUser = (updatedUserData) => {
+    setUser(updatedUserData);
+    if (updatedUserData.token) {
+      localStorage.setItem('token', updatedUserData.token);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout, signInWithGoogle, signInWithApple, loading }}>
+    <AuthContext.Provider value={{ user, login, signup, logout, signInWithGoogle, signInWithApple, updateUser, loading }}>
       {children}
     </AuthContext.Provider>
   );

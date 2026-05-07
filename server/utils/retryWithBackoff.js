@@ -1,9 +1,12 @@
 async function retryWithBackoff(fn, options = {}) {
   const {
     retries = 3,
-    delay = 35,
+    delayMs = 1000,
     factor = 2,
-    shouldRetry = (err) => err.status === 429
+    shouldRetry = (err) => {
+      const status = err.status || err.statusCode || err?.response?.status;
+      return status === 429 || status === 503;
+    }
   } = options;
 
   let attempt = 0;
@@ -18,10 +21,10 @@ async function retryWithBackoff(fn, options = {}) {
         throw err;
       }
 
-      const waitTime = delay * Math.pow(factor, attempt - 1);
-      console.log(`Retrying in ${waitTime}s (attempt ${attempt}/${retries})...`);
+      const waitTime = delayMs * Math.pow(factor, attempt - 1);
+      console.log(`Retrying in ${waitTime}ms (attempt ${attempt}/${retries})...`);
 
-      await new Promise(res => setTimeout(res, waitTime * 1000));
+      await new Promise(res => setTimeout(res, waitTime));
     }
   }
 }

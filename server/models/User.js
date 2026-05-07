@@ -22,11 +22,14 @@ const userSchema = new mongoose.Schema({
     enum: ['Free', 'Pro', 'Enterprise'],
     default: 'Free'
   },
-  stripeCustomerId: { type: String }
+  stripeCustomerId: { type: String },
+  usage_count: { type: Number, default: 0 },
+  usageResetDate: { type: Date, default: Date.now },
+  isPro: { type: Boolean, default: false }
 }, { timestamps: true });
 
-userSchema.pre('save', async function(next) {
-  if (!this.isModified('password') || !this.password) return next();
+userSchema.pre('save', async function() {
+  if (!this.isModified('password') || !this.password) return;
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
 });

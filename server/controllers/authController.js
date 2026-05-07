@@ -158,5 +158,44 @@ const appleLogin = async (req, res) => {
     res.status(401).json({ message: 'Apple authentication failed' });
   }
 };
+const updateUserProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
 
-module.exports = { registerUser, loginUser, getUserProfile, googleLogin, appleLogin };
+    if (user) {
+      user.name = req.body.name || user.name;
+      
+      // Check if email is changing and not taken
+      if (req.body.email && req.body.email !== user.email) {
+        const emailExists = await User.findOne({ email: req.body.email });
+        if (emailExists) {
+          return res.status(400).json({ message: 'Email already in use' });
+        }
+        user.email = req.body.email;
+      }
+
+      if (req.body.password && user.authProvider === 'local') {
+        user.password = req.body.password;
+      }
+
+      const updatedUser = await user.save();
+
+      res.json({
+        _id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        authProvider: updatedUser.authProvider,
+        subscriptionPlan: updatedUser.subscriptionPlan,
+        usage_count: updatedUser.usage_count,
+        token: generateToken(updatedUser._id)
+      });
+    } else {
+      res.status(404).json({ message: 'User not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { registerUser, loginUser, getUserProfile, updateUserProfile, googleLogin, appleLogin };
