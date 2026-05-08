@@ -8,7 +8,7 @@ const userRoutes = require('./routes/users');
 const ContactRoutes = require('./routes/Contact');
 
 
-dotenv.config();
+require('dotenv').config(); 
 
 const app = express();
 
