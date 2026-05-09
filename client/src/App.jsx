@@ -20,6 +20,8 @@ import ResumeBuilder from './pages/ResumeBuilder';
 import Interview from './pages/Interview';
 import Profile from './pages/Profile';
 import MultiMatch from './pages/MultiMatch';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import GamifiedCandidateFeedback from './components/GamifiedCandidateFeedback';
 
 import Loader from './components/Loader';
@@ -50,6 +52,8 @@ function App() {
             
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/resetpassword/:token" element={<ResetPassword />} />
             <Route path="/pricing" element={<Pricing />} />
             
             <Route path="/upload" element={

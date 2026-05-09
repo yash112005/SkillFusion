@@ -1,6 +1,9 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
+const { forgotPasswordTemplate } = require('../utils/templateemail');
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -198,4 +201,100 @@ const updateUserProfile = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser, getUserProfile, updateUserProfile, googleLogin, appleLogin };
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.authProvider !== 'local') {
+      return res.status(400).json({ message: `This account uses ${user.authProvider} login. Password reset is only available for local accounts.` });
+    }
+
+    // Create reset token
+    const resetToken = crypto.randomBytes(20).toString('hex');
+
+    // Hash token and set to resetPasswordToken variable
+    const resetPasswordToken = crypto
+      .createHash('sha256')
+      .update(resetToken)
+      .digest('hex');
+
+    // Set expire (10 mins)
+    const resetPasswordExpire = Date.now() + 10 * 60 * 1000;
+
+    await User.findOneAndUpdate(
+      { email },
+      { resetPasswordToken, resetPasswordExpire }
+    );
+
+    // Create reset url
+    const resetUrl = `${process.env.FRONTEND_URL}/resetpassword/${resetToken}`;
+
+    const transporter = nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true, // use SSL
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+      }
+    });
+
+    const { subject, html } = forgotPasswordTemplate(resetUrl);
+
+    await transporter.sendMail({
+      from: `"SkillFusion Support" <${process.env.EMAIL_USER}>`,
+      to: user.email,
+      subject,
+      html
+    });
+
+    res.status(200).json({ success: true, message: 'Email sent' });
+  } catch (error) {
+    console.error('Forgot password error details:', error);
+    res.status(500).json({ 
+      message: 'Email could not be sent', 
+      error: error.message 
+    });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  try {
+    // Get hashed token
+    const resetPasswordToken = crypto
+      .createHash('sha256')
+      .update(req.params.resetToken)
+      .digest('hex');
+
+    const user = await User.findOne({
+      resetPasswordToken,
+      resetPasswordExpire: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired token' });
+    }
+
+    // Set new password
+    user.password = req.body.password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Password reset successful',
+      token: generateToken(user._id)
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { registerUser, loginUser, getUserProfile, updateUserProfile, googleLogin, appleLogin, forgotPassword, resetPassword };

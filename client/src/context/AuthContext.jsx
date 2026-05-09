@@ -87,8 +87,28 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const forgotPassword = async (email) => {
+    try {
+      await axios.post('/api/auth/forgotpassword', { email });
+    } catch (err) {
+      console.error('Forgot password error:', err.response?.data || err.message);
+      throw err;
+    }
+  };
+
+  const resetPassword = async (resetToken, password) => {
+    try {
+      const res = await axios.put(`/api/auth/resetpassword/${resetToken}`, { password });
+      setUser(res.data);
+      localStorage.setItem('token', res.data.token);
+    } catch (err) {
+      console.error('Reset password error:', err.response?.data || err.message);
+      throw err;
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout, signInWithGoogle, signInWithApple, updateUser, loading }}>
+    <AuthContext.Provider value={{ user, login, signup, logout, signInWithGoogle, signInWithApple, updateUser, forgotPassword, resetPassword, loading }}>
       {children}
     </AuthContext.Provider>
   );

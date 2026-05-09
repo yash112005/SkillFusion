@@ -25,7 +25,9 @@ const userSchema = new mongoose.Schema({
   stripeCustomerId: { type: String },
   usage_count: { type: Number, default: 0 },
   usageResetDate: { type: Date, default: Date.now },
-  isPro: { type: Boolean, default: false }
+  isPro: { type: Boolean, default: false },
+  resetPasswordToken: String,
+  resetPasswordExpire: Date
 }, { timestamps: true });
 
 userSchema.pre('save', async function() {
