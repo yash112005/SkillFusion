@@ -31,7 +31,9 @@ app.use((req, res, next) => {
 
 connectDB();
 
-
+app.get('/', (req, res) => {
+  res.json({ message: "Backend is running!" });
+});
 app.use('/api/auth', authRoutes);
 app.use('/api/match', matchRoutes);
 
