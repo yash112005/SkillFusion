@@ -14,11 +14,18 @@ const app = express();
 
 
 app.use(cors({
-  origin: [
-    'https://skill-fusion-ynamdeo248-9189s-projects.vercel.app',
-    'https://skill-fusion-git-main-ynamdeo248-9189s-projects.vercel.app',
-    'https://skill-fusion-25zuinbwx-ynamdeo248-9189s-projects.vercel.app',
-  ],
+  origin: function(origin, callback) {
+    if (
+      !origin ||
+      origin.endsWith('.vercel.app') ||
+      origin === 'http://localhost:5173' ||
+      origin === 'http://localhost:3000'
+    ) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS not allowed'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
