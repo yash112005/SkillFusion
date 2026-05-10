@@ -14,7 +14,11 @@ const app = express();
 
 
 app.use(cors({
-  origin: 'https://skill-fusion-ynamdeo248-9189s-projects.vercel.app',
+  origin: [
+    'https://skill-fusion-ynamdeo248-9189s-projects.vercel.app',
+    'https://skill-fusion-git-main-ynamdeo248-9189s-projects.vercel.app',
+    'https://skill-fusion-25zuinbwx-ynamdeo248-9189s-projects.vercel.app',
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
