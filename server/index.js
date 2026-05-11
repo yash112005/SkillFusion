@@ -56,6 +56,8 @@ app.use('/api/resume', resumeRoutes);
 const interviewRoutes = require('./routes/interview');
 app.use('/api/interview', interviewRoutes);
 app.use('/api/contact', ContactRoutes);
+const feedbackRoutes = require('./routes/feedback');
+app.use('/api/feedback', feedbackRoutes);
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {

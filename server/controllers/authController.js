@@ -273,11 +273,16 @@ const forgotPassword = async (req, res) => {
     // Create reset url
     const resetUrl = `${process.env.FRONTEND_URL}/resetpassword/${resetToken}`;
 
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      console.error('Missing email configuration');
+      return res.status(500).json({ message: 'Server email configuration is missing' });
+    }
+
     const transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
-      port: 587,        // Railway blocks 465; 587 (STARTTLS) is allowed
-      secure: false,    // false = STARTTLS upgrade after connection
-      requireTLS: true, // enforce TLS upgrade
+      port: 587,
+      secure: false,
+      requireTLS: true,
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
@@ -286,6 +291,18 @@ const forgotPassword = async (req, res) => {
       greetingTimeout: 15000,
       socketTimeout: 20000
     });
+
+    // Verify connection configuration
+    try {
+      await transporter.verify();
+      console.log('SMTP connection verified');
+    } catch (verifyError) {
+      console.error('SMTP Verification Error:', verifyError);
+      return res.status(500).json({ 
+        message: 'Could not connect to email server', 
+        error: verifyError.message 
+      });
+    }
 
     const { subject, html } = forgotPasswordTemplate(resetUrl);
 

@@ -22,6 +22,7 @@ import Profile from './pages/Profile';
 import MultiMatch from './pages/MultiMatch';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import Feedback from './pages/Feedback';
 import GamifiedCandidateFeedback from './components/GamifiedCandidateFeedback';
 
 import Loader from './components/Loader';
@@ -101,6 +102,12 @@ function App() {
             <Route path="/candidate-feedback" element={
               <ProtectedRoute allowedRoles={['candidate', 'recruiter']}>
                 <GamifiedCandidateFeedback />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/feedback" element={
+              <ProtectedRoute>
+                <Feedback />
               </ProtectedRoute>
             } />
 
