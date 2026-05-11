@@ -212,7 +212,8 @@ const PDFReport = ({ data }) => {
     isPro,
     atsScore,
     suggestions,
-    createdAt
+    createdAt,
+    candidateName
   } = data || {};
 
   const getScoreColor = (s) => {
@@ -237,14 +238,22 @@ const PDFReport = ({ data }) => {
           </View>
           <View>
             <Text style={styles.headerSubtitle}>AI Skills Match Report</Text>
+            <Text style={[styles.headerSubtitle, { fontSize: 10, color: '#4b5563', marginTop: 2 }]}>
+              Candidate: {candidateName || 'User'}
+            </Text>
             <Text style={styles.headerDate}>{dateStr}</Text>
           </View>
         </View>
 
         {/* Body */}
         <View style={styles.section}>
-          <Text style={styles.title}>{jobTitle || 'Position'} @ {company || 'Company'}</Text>
-          <Text style={styles.subtitle}>Comprehensive Match Analysis</Text>
+          <Text style={styles.title}>{candidateName || 'Candidate Analysis'}</Text>
+          <Text style={styles.subtitle}>
+            {jobTitle !== 'Position' && jobTitle !== 'Not specified' ? jobTitle : ''}
+            {jobTitle !== 'Position' && jobTitle !== 'Not specified' && company !== 'Company' && company !== 'Unknown' ? ' @ ' : ''}
+            {company !== 'Company' && company !== 'Unknown' ? company : ''}
+            {(jobTitle === 'Position' || jobTitle === 'Not specified') && (company === 'Company' || company === 'Unknown') ? 'General Skill Analysis' : ''}
+          </Text>
         </View>
 
         {/* Match Summary */}
@@ -297,28 +306,31 @@ const PDFReport = ({ data }) => {
                 <Text style={[styles.tableColHeader, styles.col2]}>JD Requirement</Text>
                 <Text style={[styles.tableColHeader, styles.col3]}>Match %</Text>
               </View>
-              {skillsList.map((item, i) => (
-                <View key={i} style={styles.tableRow}>
-                  <Text style={[styles.tableCol, styles.col1]}>{item.skill}</Text>
-                  <Text style={[styles.tableCol, styles.col2]}>{item.jd_req || '—'}</Text>
-                  <View style={[styles.col3, styles.barContainer]}>
-                    <View style={styles.barBg}>
-                      <View 
-                        style={[
-                          item.percent >= 70 ? styles.barFillGreen : item.percent >= 40 ? styles.barFillAmber : styles.barFillRed,
-                          { width: `${Math.min(item.percent || 0, 100)}%` }
-                        ]} 
-                      />
+              {(skillsList || []).map((item, i) => {
+                if (!item) return null;
+                return (
+                  <View key={i} style={styles.tableRow}>
+                    <Text style={[styles.tableCol, styles.col1]}>{item.skill || 'Skill'}</Text>
+                    <Text style={[styles.tableCol, styles.col2]}>{item.jd_req || '—'}</Text>
+                    <View style={[styles.col3, styles.barContainer]}>
+                      <View style={styles.barBg}>
+                        <View 
+                          style={[
+                            (item.percent || 0) >= 70 ? styles.barFillGreen : (item.percent || 0) >= 40 ? styles.barFillAmber : styles.barFillRed,
+                            { width: `${Math.min(item.percent || 0, 100)}%` }
+                          ]} 
+                        />
+                      </View>
+                      <Text style={[
+                        styles.percentText,
+                        { color: (item.percent || 0) >= 70 ? '#166534' : (item.percent || 0) >= 40 ? '#b45309' : '#991b1b' }
+                      ]}>
+                        {item.percent || 0}%
+                      </Text>
                     </View>
-                    <Text style={[
-                      styles.percentText,
-                      { color: item.percent >= 70 ? '#166534' : item.percent >= 40 ? '#b45309' : '#991b1b' }
-                    ]}>
-                      {item.percent || 0}%
-                    </Text>
                   </View>
-                </View>
-              ))}
+                );
+              })}
             </View>
           </View>
         )}

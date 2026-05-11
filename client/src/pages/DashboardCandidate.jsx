@@ -20,7 +20,7 @@ const DashboardCandidate = () => {
   const [history, setHistory] = useState([]);
   const [recommendedJobs, setRecommendedJobs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('analytics'); // 'analytics' | 'jobs'
+  const [activeTab, setActiveTab] = useState(location.state?.activeTab || 'analytics'); // 'analytics' | 'jobs'
 
 
   const latestMatch = location.state?.matchResult;
