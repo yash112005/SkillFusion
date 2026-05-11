@@ -91,20 +91,59 @@ const generateToken = (id) => {
 const googleLogin = async (req, res) => {
   try {
     const { token, role } = req.body;
-    
-    console.log('Token received:', token);
-    
+
+    if (!token) {
+      return res.status(400).json({ message: 'No token provided' });
+    }
+
     const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
       headers: { Authorization: `Bearer ${token}` }
     });
-    
-    console.log('Google response status:', response.status);
-    
+
+    if (!response.ok) {
+      return res.status(401).json({ message: 'Invalid Google token' });
+    }
+
     const payload = await response.json();
-    console.log('Google payload:', payload);
+    const { sub: googleId, email, name, picture } = payload;
+
+    if (!email) {
+      return res.status(400).json({ message: 'Could not retrieve email from Google account' });
+    }
+
+    let user = await User.findOne({ googleId });
+
+    if (!user) {
+      user = await User.findOne({ email });
+    }
+
+    if (user) {
+      if (!user.googleId) {
+        user.googleId = googleId;
+        user.authProvider = 'google';
+        await user.save();
+      }
+    } else {
+      user = await User.create({
+        name: name || 'Google User',
+        email,
+        googleId,
+        authProvider: 'google',
+        role: role || 'candidate'
+      });
+    }
+
+    res.json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      subscriptionPlan: user.subscriptionPlan,
+      token: generateToken(user._id)
+    });
   } catch (error) {
-    console.error('Google login error:', error); // 👈 add karo
-    res.status(401).json({ message: 'Google authentication failed' });
+    console.error('Google login error:', error);
+    res.status(401).json({ message: 'Google authentication failed', error: error.message });
   }
 }
 const appleLogin = async (req, res) => {
@@ -237,11 +276,14 @@ const forgotPassword = async (req, res) => {
     const transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
       port: 465,
-      secure: true, // use SSL
+      secure: true,
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
-      }
+      },
+      connectionTimeout: 10000,  // 10 seconds — fail fast instead of buffering forever
+      greetingTimeout: 10000,
+      socketTimeout: 15000
     });
 
     const { subject, html } = forgotPasswordTemplate(resetUrl);
