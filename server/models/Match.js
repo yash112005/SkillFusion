@@ -15,15 +15,6 @@ const matchSchema = new mongoose.Schema({
   }],
   suggestions: { type: String },
   atsScore: { type: Number, default: 0 },
-  jdAnalysis: {
-    skills: {
-      hard: [String],
-      soft: [String]
-    },
-    responsibilities: [String],
-    cultureFit: [String],
-    atsKeywords: [String]
-  }
 }, { timestamps: true });
 
 const Match = mongoose.model('Match', matchSchema);

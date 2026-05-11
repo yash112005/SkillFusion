@@ -114,7 +114,7 @@ async function geminiaiAnalyzer(resumeText, jobText) {
   resumeText = cleaningText(resumeText);
   jobText    = cleaningText(jobText);
 
-  const model = client.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+  const model = client.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 
   const prompt = `
@@ -285,7 +285,7 @@ function cleaningText(text) {
 }
 
 async function generateResumeContent(promptType, data, jobDescription = "") {
-  const model = client.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+  const model = client.getGenerativeModel({ model: "gemini-1.5-flash" });
   let prompt = "";
 
   if (promptType === "summary") {
@@ -321,7 +321,7 @@ async function generateResumeContent(promptType, data, jobDescription = "") {
 
 
 async function generateInterviewQuestions(role, level, type, count) {
-  const model = client.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+  const model = client.getGenerativeModel({ model: "gemini-1.5-flash" });
   
   const prompt = `
     You are an expert technical interviewer and career coach with 15+ years of experience hiring for top tech companies. 
@@ -359,7 +359,7 @@ async function generateInterviewQuestions(role, level, type, count) {
 }
 
 async function evaluateInterviewAnswer(question, answer) {
-  const model = client.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+  const model = client.getGenerativeModel({ model: "gemini-1.5-flash" });
   
   const prompt = `
     You are an expert technical interviewer and career coach with 15+ years of experience.
@@ -399,7 +399,7 @@ async function evaluateInterviewAnswer(question, answer) {
 async function multiJDCompare(resumeText, jds = []) {
   if (!jds.length) return [];
 
-  const model = client.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+  const model = client.getGenerativeModel({ model: "gemini-1.5-flash" });
 
   const results = [];
   
@@ -462,7 +462,7 @@ async function multiJDCompare(resumeText, jds = []) {
 }
 
 async function generateJDRefinements(jobTitle, currentJD, applicantData) {
-  const model = client.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+  const model = client.getGenerativeModel({ model: "gemini-1.5-flash" });
   
   const prompt = `
     You are an expert recruitment consultant. Analyze the following recruitment data and provide 2-4 specific, actionable suggestions for the recruiter to improve the Job Description (JD).
@@ -496,38 +496,6 @@ async function generateJDRefinements(jobTitle, currentJD, applicantData) {
   }
 }
 
-async function analyzeJD(jdText) {
-  const model = client.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
-  
-  const prompt = `
-    Analyze the following Job Description and break it down into structured categories.
-    Return ONLY a valid JSON object with the following structure:
-    {
-      "title": "Job Title",
-      "skills": {
-        "hard": ["skill1", "skill2"],
-        "soft": ["skill1", "skill2"]
-      },
-      "responsibilities": ["resp1", "resp2"],
-      "culture_fit": ["trait1", "trait2"],
-      "ats_keywords": ["keyword1", "keyword2"]
-    }
-
-    Job Description:
-    ${jdText.substring(0, 5000)}
-  `;
-
-  try {
-    const result = await retryWithBackoff(() => model.generateContent(prompt));
-    let text = result.response.text().trim();
-    text = text.replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
-    return JSON.parse(text);
-  } catch (err) {
-    console.error("Error in JD Analyzer Agent:", err);
-    throw new Error("Failed to analyze JD with AI");
-  }
-}
-
 module.exports = {
   getEmbedding,
   geminiaiAnalyzer,
@@ -539,8 +507,7 @@ module.exports = {
   generateInterviewQuestions,
   evaluateInterviewAnswer,
   multiJDCompare,
-  generateJDRefinements,
-  analyzeJD
+  generateJDRefinements
 };
 
 

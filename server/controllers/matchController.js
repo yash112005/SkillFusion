@@ -3,7 +3,7 @@ const User = require('../models/User');
 const MatchFeedback = require('../models/MatchFeedback');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const retryWithBackoff = require('../utils/retryWithBackoff');
-const { multiJDCompare, generateSkillySuggestions, analyzeJD } = require('../utils/geminiService');
+const { multiJDCompare, generateSkillySuggestions } = require('../utils/geminiService');
 const { PDFParse } = require('pdf-parse');
 
 const FREE_MATCH_LIMIT = 5;
@@ -76,36 +76,32 @@ const generateMatch = async (req, res) => {
       jdText = jdBuffer.toString('utf-8');
     }
 
-    // Step 1: JD Analyzer Agent
-    const jdAnalysis = await analyzeJD(jdText);
-
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash-lite'
+      model: 'gemini-1.5-flash'
     });
 
-    // Step 2: Precise Matcher Pipeline using analyzed JD data
-    const prompt = `Compare the following resume with the structured job description data.
+    const prompt = `Compare the following resume with the job description.
 Return ONLY valid JSON with no code fences or extra text.
 
-Structured JD Data:
-${JSON.stringify(jdAnalysis, null, 2)}
-
 {
-  "score": <number 0-100 based on structured categories above>,
-  "job_title": "${jdAnalysis.title}",
-  "company": "<extracted company name from JD, or 'Unknown'>",
-  "summary": "<2-3 sentence summary of how well the candidate fits across skills, responsibilities, and culture fit>",
+  "score": <number 0-100>,
+  "job_title": "<extracted job title>",
+  "company": "<extracted company name>",
+  "summary": "<2-3 sentence summary>",
   "matched_keywords": ["<keyword1>", "<keyword2>", ...],
   "missing_keywords": ["<keyword1>", "<keyword2>", ...],
   "matches": [
-    { "skill": "<skill name>", "jd_req": "<matching JD requirement from skills or responsibilities>", "percent": <0-100> }
+    { "skill": "<skill name>", "jd_req": "<matching JD requirement>", "percent": <0-100> }
   ],
-  "suggestions": "<actionable improvement suggestions for the candidate to better align with the ATS keywords and culture fit>"
+  "suggestions": "<improvement suggestions>"
 }
 
-Resume Content:
+Resume:
 ${resumeText.substring(0, 5000)}
+
+Job Description:
+${jdText.substring(0, 5000)}
 `;
 
     const response = await retryWithBackoff(
@@ -133,20 +129,14 @@ ${resumeText.substring(0, 5000)}
     const match = await Match.create({
       userId: req.user._id,
       score: resultJson.score || 0,
-      jobTitle: resultJson.job_title || jdAnalysis.title || '',
+      jobTitle: resultJson.job_title || '',
       company: resultJson.company || '',
       summary: resultJson.summary || '',
       matchedKeywords: resultJson.matched_keywords || [],
       missingKeywords: resultJson.missing_keywords || [],
       matchedSkills: resultJson.matches || [],
       suggestions: resultJson.suggestions || '',
-      atsScore: Math.floor(Math.random() * 30) + 60,
-      jdAnalysis: {
-        skills: jdAnalysis.skills,
-        responsibilities: jdAnalysis.responsibilities,
-        cultureFit: jdAnalysis.culture_fit,
-        atsKeywords: jdAnalysis.ats_keywords
-      }
+      atsScore: Math.floor(Math.random() * 30) + 60
     });
 
     user.usage_count += 1;
