@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { usePDF } from '@react-pdf/renderer';
@@ -44,9 +44,27 @@ const Interview = () => {
   const greatCount = evaluations.filter(e => e.evaluation?.score === 'great').length;
   const score = questions.length > 0 ? Math.round((greatCount / questions.length) * 100) : 0;
 
-  const [pdfInstance] = usePDF({
-    document: step === 'summary' ? <InterviewReport data={{ role: formData.role, level: formData.level, type: formData.type, evaluations, overallScore: score }} /> : null
+  const reportData = useMemo(() => ({
+    role: formData.role,
+    level: formData.level,
+    type: formData.type,
+    evaluations,
+    overallScore: score
+  }), [formData.role, formData.level, formData.type, evaluations, score]);
+
+  const pdfDocument = useMemo(() => (
+    step === 'summary' ? <InterviewReport data={reportData} /> : null
+  ), [step, reportData]);
+
+  const [pdfInstance, updatePdf] = usePDF({
+    document: pdfDocument
   });
+
+  useEffect(() => {
+    if (pdfDocument) {
+      updatePdf(pdfDocument);
+    }
+  }, [pdfDocument, updatePdf]);
 
   const handleDownload = () => {
     if (!pdfInstance || pdfInstance.loading || pdfInstance.error) return;

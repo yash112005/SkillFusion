@@ -35,7 +35,7 @@ const JobDetails = () => {
 
         // Fetch insights and applications if recruiter owns the job
         if (user.role === 'recruiter' && res.data.recruiterId === user._id) {
-          const [insightsRes, appsRes] = await Promise.all([
+          const [insightsRes] = await Promise.all([
             axios.get(`/api/jobs/${id}/insights`, {
               headers: { Authorization: `Bearer ${user.token}` }
             }),

@@ -3,7 +3,7 @@ const User = require('../models/User');
 const MatchFeedback = require('../models/MatchFeedback');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const retryWithBackoff = require('../utils/retryWithBackoff');
-const { multiJDCompare, generateSkillySuggestions } = require('../utils/geminiService');
+const { multiJDCompare, generateSkillySuggestions, generateSkillGapRoadmap } = require('../utils/geminiService');
 const { PDFParse } = require('pdf-parse');
 
 const FREE_MATCH_LIMIT = 5;
@@ -251,10 +251,39 @@ const compareMultiJD = async (req, res) => {
   }
 };
 
+const getMentorAdvice = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const match = await Match.findById(id);
+    
+    if (!match) {
+      return res.status(404).json({ message: "Match not found" });
+    }
+
+    const missingSkills = match.missingKeywords || [];
+    const role = match.jobTitle || 'Target Role';
+
+    if (missingSkills.length === 0) {
+      return res.json({ 
+        mentorMessage: "You're a perfect match! No significant skill gaps identified. You're ready to apply!",
+        roadmaps: []
+      });
+    }
+
+    const roadmap = await generateSkillGapRoadmap(missingSkills.slice(0, 3), role);
+    
+    res.json(roadmap);
+  } catch (error) {
+    console.error("Mentor advice error:", error);
+    res.status(500).json({ message: "Failed to generate mentor advice" });
+  }
+};
+
 module.exports = { 
   generateMatch, 
   getMatchHistory, 
   getUsageInfo, 
   submitFeedback, 
-  compareMultiJD
+  compareMultiJD,
+  getMentorAdvice
 };

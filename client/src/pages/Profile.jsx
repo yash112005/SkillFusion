@@ -19,11 +19,13 @@ const Profile = () => {
 
   useEffect(() => {
     if (user) {
-      setFormData(prev => ({
-        ...prev,
-        name: user.name || '',
-        email: user.email || ''
-      }));
+      Promise.resolve().then(() => {
+        setFormData(prev => ({
+          ...prev,
+          name: user.name || '',
+          email: user.email || ''
+        }));
+      });
     }
   }, [user]);
 

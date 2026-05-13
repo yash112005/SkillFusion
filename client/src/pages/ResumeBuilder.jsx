@@ -106,7 +106,7 @@ const ResumeBuilder = () => {
           };
           dispatch({ type: 'SET_FULL_DATA', payload: mergedData });
         }
-      } catch (err) {
+      } catch {
         console.log("No existing resume found or error fetching");
       } finally {
         setLoading(false);

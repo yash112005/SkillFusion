@@ -4,6 +4,41 @@ const retryWithBackoff = require('./retryWithBackoff');
 
 const client = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
+function cleanAIJSON(text) {
+  try {
+    // Remove potential markdown fences
+    let cleaned = text.replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
+    
+    // If still contains fences (Gemini sometimes puts them in the middle or incorrectly)
+    if (cleaned.includes('```')) {
+      cleaned = cleaned.replace(/```json|```/g, "").trim();
+    }
+    
+    // Try to find the first [ or { and last ] or } to extract just the JSON
+    const startBracket = cleaned.indexOf('[');
+    const startBrace = cleaned.indexOf('{');
+    let start = -1;
+    let end = -1;
+
+    if (startBracket !== -1 && (startBrace === -1 || startBracket < startBrace)) {
+      start = startBracket;
+      end = cleaned.lastIndexOf(']');
+    } else if (startBrace !== -1) {
+      start = startBrace;
+      end = cleaned.lastIndexOf('}');
+    }
+
+    if (start !== -1 && end !== -1 && end > start) {
+      cleaned = cleaned.substring(start, end + 1);
+    }
+
+    return cleaned;
+  } catch (err) {
+    console.error("Error in cleanAIJSON:", err);
+    return text;
+  }
+}
+
 
 function cosineSimilarity(vecA, vecB) {
   if (!vecA || !vecB || vecA.length !== vecB.length) return 0;
@@ -199,7 +234,7 @@ async function geminiaiAnalyzer(resumeText, jobText) {
 
   let parsed;
   try {
-    const clean = rawText.replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
+    const clean = cleanAIJSON(rawText);
     parsed = JSON.parse(clean);
   } catch {
     console.error("Failed to parse LLM JSON, returning raw text");
@@ -308,7 +343,7 @@ async function generateResumeContent(promptType, data, jobDescription = "") {
     const result = await model.generateContent(prompt);
     let text = result.response.text().trim();
     if (promptType === "bullets" || promptType === "skills") {
-      text = text.replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
+      text = cleanAIJSON(text);
       return JSON.parse(text);
     }
     return text;
@@ -347,10 +382,13 @@ async function generateInterviewQuestions(role, level, type, count) {
   `;
 
   try {
-    const result = await retryWithBackoff(() => model.generateContent(prompt));
+    const result = await retryWithBackoff(() => model.generateContent(prompt), {
+      retries: 3,
+      delayMs: 2000
+    });
     let text = result.response.text().trim();
     // Clean potential markdown artifacts
-    text = text.replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
+    text = cleanAIJSON(text);
     return JSON.parse(text);
   } catch (err) {
     console.error("Error generating interview questions:", err);
@@ -388,7 +426,7 @@ async function evaluateInterviewAnswer(question, answer) {
     const result = await retryWithBackoff(() => model.generateContent(prompt));
     let text = result.response.text().trim();
     // Clean potential markdown artifacts
-    text = text.replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
+    text = cleanAIJSON(text);
     return JSON.parse(text);
   } catch (err) {
     console.error("Error evaluating interview answer:", err);
@@ -496,6 +534,56 @@ async function generateJDRefinements(jobTitle, currentJD, applicantData) {
   }
 }
 
+async function generateSkillGapRoadmap(missingSkills, role) {
+  const model = client.getGenerativeModel({ model: "gemini-1.5-flash" });
+  
+  const prompt = `
+    You are an expert technical mentor and career coach.
+    A candidate is missing the following skills for a ${role} position: ${missingSkills.join(", ")}.
+    
+    Create a detailed, autonomous learning roadmap for these skills.
+    For each skill, provide:
+    1. A 2-week roadmap (Week 1 and Week 2 focus).
+    2. Suggested learning resources:
+       - 1 high-quality online course (Udemy, Coursera, etc.)
+       - 1 professional certification (if applicable)
+       - 1 popular GitHub repository for hands-on practice
+    3. A brief "Mentor's Tip" on how to master this skill quickly.
+
+    Return ONLY a valid JSON object.
+    No markdown. No backticks. No extra text.
+
+    Format:
+    {
+      "mentorMessage": "Friendly intro message...",
+      "roadmaps": [
+        {
+          "skill": "Skill Name",
+          "timeframe": "2 Weeks",
+          "week1": "Topics to cover in week 1",
+          "week2": "Topics to cover in week 2",
+          "resources": {
+            "course": "Course Name & Platform",
+            "certification": "Cert Name (or 'N/A')",
+            "github": "Repo Name/Link"
+          },
+          "mentorTip": "Mastery tip..."
+        }
+      ]
+    }
+  `;
+
+  try {
+    const result = await retryWithBackoff(() => model.generateContent(prompt));
+    let text = result.response.text().trim();
+    text = cleanAIJSON(text);
+    return JSON.parse(text);
+  } catch (err) {
+    console.error("Error generating skill gap roadmap:", err);
+    throw new Error("Failed to generate roadmap with AI");
+  }
+}
+
 module.exports = {
   getEmbedding,
   geminiaiAnalyzer,
@@ -507,7 +595,8 @@ module.exports = {
   generateInterviewQuestions,
   evaluateInterviewAnswer,
   multiJDCompare,
-  generateJDRefinements
+  generateJDRefinements,
+  generateSkillGapRoadmap
 };
 
 

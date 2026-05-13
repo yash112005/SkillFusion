@@ -52,7 +52,7 @@ const PostJob = () => {
       };
       fetchJob();
     } else if (isEditMode && !user?.token) {
-        setLoading(false);
+        Promise.resolve().then(() => setLoading(false));
     }
   }, [id, isEditMode, user?.token]);
 

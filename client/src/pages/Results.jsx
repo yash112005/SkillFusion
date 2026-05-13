@@ -12,6 +12,7 @@ import {
 import Loader from '../components/Loader';
 import { usePDF } from '@react-pdf/renderer';
 import PDFReport from '../components/PDFReport';
+import SkillGapMentor from '../components/SkillGapMentor';
 
 const ScoreRing = ({ score, size = 180 }) => {
   const strokeWidth = 12;
@@ -26,7 +27,6 @@ const ScoreRing = ({ score, size = 180 }) => {
   };
 
   const color = getColor(score);
-
   return (
     <div className="flex flex-col items-center">
       <div className="relative" style={{ width: size, height: size }}>
@@ -124,8 +124,11 @@ const Results = () => {
   const [error, setError] = useState('');
   const [showHistory, setShowHistory] = useState(false);
   const [selectedHistoryMatch, setSelectedHistoryMatch] = useState(null);
+  const [showMentor, setShowMentor] = useState(false);
 
   const latestMatch = location.state?.matchResult;
+
+  const [renderTime] = useState(() => Date.now());
 
   useEffect(() => {
     const fetchData = async () => {
@@ -145,8 +148,12 @@ const Results = () => {
         setLoading(false);
       }
     };
-    if (user?.token) fetchData();
-    else setLoading(false);
+    if (user?.token) {
+      fetchData();
+    } else {
+      // Use a microtask to avoid synchronous setState in effect body
+      Promise.resolve().then(() => setLoading(false));
+    }
   }, [user]);
 
   const displayMatch = selectedHistoryMatch || latestMatch || history[0];
@@ -157,16 +164,28 @@ const Results = () => {
   const jobTitle = displayMatch?.jobTitle || displayMatch?.job_title || 'Position';
   const company = displayMatch?.company || 'Company';
   const summary = displayMatch?.summary || '';
-  const matchedKeywords = displayMatch?.matchedKeywords || displayMatch?.matched_keywords || [];
-  const missingKeywords = displayMatch?.missingKeywords || displayMatch?.missing_keywords || [];
+  const matchedKeywords = useMemo(() => {
+    return displayMatch?.matchedKeywords || displayMatch?.matched_keywords || [];
+  }, [displayMatch]);
+  const missingKeywords = useMemo(() => {
+    return displayMatch?.missingKeywords || displayMatch?.missing_keywords || [];
+  }, [displayMatch]);
   const suggestions = displayMatch?.suggestions || '';
   const atsScore = displayMatch?.atsScore || 0;
   const matchId = displayMatch?._id;
-  const createdAt = displayMatch?.createdAt ? new Date(displayMatch.createdAt) : new Date();
-  const timeAgo = Math.floor((Date.now() - createdAt.getTime()) / 60000);
-  const timeLabel = timeAgo < 1 ? 'Just now' : timeAgo < 60 ? `${timeAgo} min ago` : `${Math.floor(timeAgo / 60)}h ago`;
+  const createdAt = useMemo(() => {
+    return displayMatch?.createdAt ? new Date(displayMatch.createdAt) : new Date();
+  }, [displayMatch]);
+  const timeLabel = useMemo(() => {
+    const ago = Math.floor((renderTime - createdAt.getTime()) / 60000);
+    if (ago < 1) return 'Just now';
+    if (ago < 60) return `${ago} min ago`;
+    return `${Math.floor(ago / 60)}h ago`;
+  }, [createdAt, renderTime]);
 
-  const skillsList = displayMatch?.matchedSkills?.length > 0 ? displayMatch.matchedSkills : [];
+  const skillsList = useMemo(() => {
+    return displayMatch?.matchedSkills?.length > 0 ? displayMatch.matchedSkills : [];
+  }, [displayMatch]);
 
   const strengths = [
     "Strong technical foundation in core required technologies.",
@@ -359,6 +378,13 @@ const Results = () => {
                   <FileText className="w-5 h-5 mr-2" />
                   Build Resume
                 </Link>
+                <button 
+                  onClick={() => setShowMentor(true)}
+                  className="inline-flex items-center px-5 py-2.5 rounded-xl bg-white dark:bg-gray-800 text-primary-600 dark:text-primary-400 font-bold shadow-lg hover:shadow-xl transition-all hover:-translate-y-1 border border-primary-100 dark:border-primary-900/30"
+                >
+                  <BrainCircuit className="w-5 h-5 mr-2" />
+                  Consult AI Mentor
+                </button>
                 {user?.role === 'candidate' && (
                   <Link 
                     to="/dashboard/candidate" 
@@ -769,6 +795,12 @@ const Results = () => {
         </>
       )}
 
+      {/* AI Skill Gap Mentor Modal */}
+      <SkillGapMentor 
+        matchId={displayMatch?._id}
+        isOpen={showMentor}
+        onClose={() => setShowMentor(false)}
+      />
     </div>
   );
 };

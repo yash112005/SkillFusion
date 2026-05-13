@@ -18,6 +18,7 @@ app.use(cors({
     if (
       !origin ||
       origin.endsWith('.vercel.app') ||
+      origin.startsWith('http://localhost:') ||
       origin === 'http://localhost:5173' ||
       origin === 'http://localhost:3000'
     ) {

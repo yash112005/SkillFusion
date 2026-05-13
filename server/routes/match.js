@@ -5,7 +5,8 @@ const {
   getMatchHistory, 
   getUsageInfo, 
   submitFeedback, 
-  compareMultiJD
+  compareMultiJD,
+  getMentorAdvice
 } = require('../controllers/matchController');
 const { handleSkillyChat } = require('../controllers/chatController');
 const { protect } = require('../middleware/auth');
@@ -19,6 +20,7 @@ router.post('/skilly-chat', protect, handleSkillyChat);
 router.get('/history', protect, getMatchHistory);
 router.get('/usage', protect, getUsageInfo);
 router.post('/feedback', protect, submitFeedback);
+router.get('/:id/mentor', protect, getMentorAdvice);
 
 
 module.exports = router;

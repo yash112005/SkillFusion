@@ -27,6 +27,7 @@ import GamifiedCandidateFeedback from './components/GamifiedCandidateFeedback';
 
 import Loader from './components/Loader';
 import SkillyChat from './components/SkillyChat';
+import ErrorBoundary from './components/ErrorBoundary';
 import { useAuth } from './context/AuthContext';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -39,6 +40,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
 function App() {
   return (
+    <ErrorBoundary>
     <Router>
       <div className="min-h-screen flex flex-col">
         <Navbar />
@@ -152,6 +154,7 @@ function App() {
         <SkillyChat />
       </div>
     </Router>
+    </ErrorBoundary>
   );
 }
 

@@ -182,7 +182,7 @@ const MultiMatch = () => {
               </div>
 
               <div className="space-y-6">
-                {jds.map((jd, index) => (
+                {jds.map((jd) => (
                   <div key={jd.id} className="relative p-6 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 group animate-slide-up">
                     {jds.length > 2 && (
                       <button 

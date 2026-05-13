@@ -45,7 +45,7 @@ const DashboardCandidate = () => {
       }
     };
     if (user?.token) fetchData();
-    else setLoading(false);
+    else Promise.resolve().then(() => setLoading(false));
   }, [user]);
 
   const displayMatch = latestMatch || history[0];

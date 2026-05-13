@@ -1,9 +1,78 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { FilePlus, Brain, XCircle, CheckCircle, Zap, Sparkles, ArrowRight } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 
+
+const UploadBox = ({ title, type, file, errorMsg, accept, handleDrop, handleFileChange, removeFile }) => {
+  let borderColor = 'border-gray-300 dark:border-gray-700';
+  let bgColor = 'bg-white dark:bg-dark-card';
+  
+  if (errorMsg) {
+    borderColor = 'border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.3)]';
+    bgColor = 'bg-red-50 dark:bg-red-900/10';
+  } else if (file) {
+    borderColor = 'border-green-500 shadow-[0_0_15px_rgba(34,197,94,0.3)]';
+    bgColor = 'bg-green-50 dark:bg-green-900/10';
+  }
+
+  return (
+    <div 
+      className={`card border-2 border-dashed ${borderColor} ${bgColor} flex flex-col items-center justify-center p-10 transition-all duration-300 cursor-pointer relative overflow-hidden group min-h-[350px] w-full`}
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={(e) => handleDrop(e, type)}
+    >
+      <input 
+        type="file" 
+        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+        accept={accept}
+        onChange={(e) => handleFileChange(e, type)}
+      />
+      
+      <div className="absolute inset-0 bg-gradient-to-br from-primary-500/0 to-primary-500/5 group-hover:to-primary-500/10 transition-colors duration-500"></div>
+
+      {file ? (
+        <div className="text-center z-20 animate-fade-in relative w-full flex flex-col items-center">
+           <button onClick={(e) => removeFile(e, type)} className="absolute -top-6 -right-6 text-gray-400 hover:text-red-500 transition-colors z-30 bg-white dark:bg-dark-bg rounded-full">
+              <XCircle className="w-7 h-7" />
+           </button>
+          <div className="w-20 h-20 mx-auto mb-4 bg-green-100 dark:bg-green-900/40 rounded-full flex items-center justify-center shadow-inner">
+              <CheckCircle className="w-10 h-10 text-green-500" />
+          </div>
+          <p className="font-semibold text-gray-800 dark:text-gray-200 mb-2 truncate w-full px-4">{file.name}</p>
+          <div className="flex items-center justify-center space-x-2 text-sm text-gray-500 dark:text-gray-400 font-medium">
+              <span className="uppercase bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">{file.name.split('.').pop()}</span>
+              <span>•</span>
+              <span>{(file.size / 1024 / 1024).toFixed(2)} MB</span>
+          </div>
+        </div>
+      ) : (
+        <div className="text-center z-20 flex flex-col items-center w-full">
+          <div className="w-20 h-20 mb-6 rounded-full bg-primary-50 dark:bg-dark-bg flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 shadow-inner">
+              <FilePlus className="w-10 h-10 text-primary-500" />
+          </div>
+          <p className="font-bold text-xl mb-3 text-gray-800 dark:text-gray-200">{title}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 text-center max-w-[220px]">Drag & drop your file here or click to browse</p>
+          
+          <div className="flex flex-wrap justify-center gap-2 mt-2">
+            {accept.split(',').map(ext => (
+              <span key={ext} className="text-xs font-semibold px-2.5 py-1 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md text-gray-600 dark:text-gray-300 uppercase shadow-sm">
+                {ext.replace('.','')}
+              </span>
+            ))}
+          </div>
+          <p className="text-xs text-gray-400 mt-4 font-medium tracking-wide">MAX SIZE: 5MB</p>
+          {errorMsg && (
+              <div className="mt-5 text-red-600 dark:text-red-400 text-sm flex items-center justify-center bg-red-100 dark:bg-red-900/30 px-4 py-2 rounded-lg w-full animate-fade-in font-medium">
+                  <XCircle className="w-4 h-4 mr-2 flex-shrink-0" /> {errorMsg}
+              </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const Upload = () => {
   const [resume, setResume] = useState(null);
@@ -119,74 +188,6 @@ const Upload = () => {
         setJdError('');
     }
   };
-const UploadBox = ({ title, type, file, errorMsg, accept, handleDrop, handleFileChange, removeFile }) => {
-  let borderColor = 'border-gray-300 dark:border-gray-700';
-  let bgColor = 'bg-white dark:bg-dark-card';
-  
-  if (errorMsg) {
-    borderColor = 'border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.3)]';
-    bgColor = 'bg-red-50 dark:bg-red-900/10';
-  } else if (file) {
-    borderColor = 'border-green-500 shadow-[0_0_15px_rgba(34,197,94,0.3)]';
-    bgColor = 'bg-green-50 dark:bg-green-900/10';
-  }
-
-  return (
-    <div 
-      className={`card border-2 border-dashed ${borderColor} ${bgColor} flex flex-col items-center justify-center p-10 transition-all duration-300 cursor-pointer relative overflow-hidden group min-h-[350px] w-full`}
-      onDragOver={(e) => e.preventDefault()}
-      onDrop={(e) => handleDrop(e, type)}
-    >
-      <input 
-        type="file" 
-        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-        accept={accept}
-        onChange={(e) => handleFileChange(e, type)}
-      />
-      
-      <div className="absolute inset-0 bg-gradient-to-br from-primary-500/0 to-primary-500/5 group-hover:to-primary-500/10 transition-colors duration-500"></div>
-
-      {file ? (
-        <div className="text-center z-20 animate-fade-in relative w-full flex flex-col items-center">
-           <button onClick={(e) => removeFile(e, type)} className="absolute -top-6 -right-6 text-gray-400 hover:text-red-500 transition-colors z-30 bg-white dark:bg-dark-bg rounded-full">
-              <XCircle className="w-7 h-7" />
-           </button>
-          <div className="w-20 h-20 mx-auto mb-4 bg-green-100 dark:bg-green-900/40 rounded-full flex items-center justify-center shadow-inner">
-              <CheckCircle className="w-10 h-10 text-green-500" />
-          </div>
-          <p className="font-semibold text-gray-800 dark:text-gray-200 mb-2 truncate w-full px-4">{file.name}</p>
-          <div className="flex items-center justify-center space-x-2 text-sm text-gray-500 dark:text-gray-400 font-medium">
-              <span className="uppercase bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">{file.name.split('.').pop()}</span>
-              <span>•</span>
-              <span>{(file.size / 1024 / 1024).toFixed(2)} MB</span>
-          </div>
-        </div>
-      ) : (
-        <div className="text-center z-20 flex flex-col items-center w-full">
-          <div className="w-20 h-20 mb-6 rounded-full bg-primary-50 dark:bg-dark-bg flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 shadow-inner">
-              <FilePlus className="w-10 h-10 text-primary-500" />
-          </div>
-          <p className="font-bold text-xl mb-3 text-gray-800 dark:text-gray-200">{title}</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 text-center max-w-[220px]">Drag & drop your file here or click to browse</p>
-          
-          <div className="flex flex-wrap justify-center gap-2 mt-2">
-            {accept.split(',').map(ext => (
-              <span key={ext} className="text-xs font-semibold px-2.5 py-1 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md text-gray-600 dark:text-gray-300 uppercase shadow-sm">
-                {ext.replace('.','')}
-              </span>
-            ))}
-          </div>
-          <p className="text-xs text-gray-400 mt-4 font-medium tracking-wide">MAX SIZE: 5MB</p>
-          {errorMsg && (
-              <div className="mt-5 text-red-600 dark:text-red-400 text-sm flex items-center justify-center bg-red-100 dark:bg-red-900/30 px-4 py-2 rounded-lg w-full animate-fade-in font-medium">
-                  <XCircle className="w-4 h-4 mr-2 flex-shrink-0" /> {errorMsg}
-              </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
 
   return (
     <div className="min-h-[calc(100vh-64px)] bg-gray-50 dark:bg-dark-bg py-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden flex flex-col items-center">
