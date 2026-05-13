@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { usePDF } from '@react-pdf/renderer';
@@ -17,7 +17,10 @@ import {
   RefreshCw,
   Trophy,
   MessageSquare,
-  Download
+  Download,
+  Mic,
+  MicOff,
+  Volume2
 } from 'lucide-react';
 
 const Interview = () => {
@@ -36,6 +39,9 @@ const Interview = () => {
   const [answer, setAnswer] = useState('');
   const [evaluations, setEvaluations] = useState([]);
   const [currentEval, setCurrentEval] = useState(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const recognitionRef = useRef(null);
 
   const levels = ['Entry', 'Mid', 'Senior', 'Lead'];
   const types = ['Technical', 'Behavioral', 'System Design', 'Mixed'];
@@ -77,6 +83,69 @@ const Interview = () => {
       document.body.removeChild(link);
     }
   };
+
+  const speakQuestion = (text) => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.onstart = () => setIsSpeaking(true);
+      utterance.onend = () => setIsSpeaking(false);
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
+  useEffect(() => {
+    if (step === 'interview' && questions[currentIdx]) {
+      speakQuestion(questions[currentIdx]);
+    }
+    return () => {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, [step, currentIdx, questions]);
+
+  const toggleRecording = () => {
+    if (isRecording) {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      setIsRecording(false);
+    } else {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        alert("Your browser does not support speech recognition. Please try Chrome or Edge.");
+        return;
+      }
+
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onresult = (event) => {
+        let transcript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        setAnswer(prev => prev + (prev.endsWith(' ') || prev === '' ? '' : ' ') + transcript);
+      };
+
+      recognition.onerror = (event) => {
+        console.error("Speech recognition error", event.error);
+        setIsRecording(false);
+      };
+
+      recognition.onend = () => {
+        setIsRecording(false);
+      };
+
+      recognition.start();
+      recognitionRef.current = recognition;
+      setIsRecording(true);
+    }
+  };
+
 
   const handleStart = async (e) => {
     e.preventDefault();
@@ -279,15 +348,42 @@ const Interview = () => {
           <div className="w-14 h-14 rounded-2xl bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center flex-shrink-0">
             <BrainCircuit className="w-8 h-8 text-primary-600" />
           </div>
-          <p className="text-2xl font-bold text-gray-800 dark:text-gray-100 leading-tight">
-            {questions[currentIdx]}
-          </p>
+          <div className="flex-1">
+            <div className="flex items-center gap-4 mb-2">
+              <button
+                onClick={() => speakQuestion(questions[currentIdx])}
+                className={`p-2 rounded-lg transition-colors ${isSpeaking ? 'bg-primary-100 text-primary-600' : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500'}`}
+                title="Read Question Aloud"
+              >
+                <Volume2 className={`w-5 h-5 ${isSpeaking ? 'animate-pulse' : ''}`} />
+              </button>
+            </div>
+            <p className="text-2xl font-bold text-gray-800 dark:text-gray-100 leading-tight">
+              {questions[currentIdx]}
+            </p>
+          </div>
         </div>
 
         <div className="space-y-4">
-          <label className="block text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
-            Your Response
-          </label>
+          <div className="flex justify-between items-center">
+            <label className="block text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
+              Your Response
+            </label>
+            <button
+              onClick={toggleRecording}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm transition-all ${
+                isRecording 
+                  ? 'bg-red-100 text-red-600 animate-pulse' 
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+              }`}
+            >
+              {isRecording ? (
+                <><MicOff className="w-4 h-4" /> Stop Recording</>
+              ) : (
+                <><Mic className="w-4 h-4" /> Answer by Voice</>
+              )}
+            </button>
+          </div>
           <textarea
             className="w-full h-64 p-6 rounded-2xl border-2 border-gray-100 dark:border-gray-800 bg-white dark:bg-dark-bg text-gray-900 dark:text-white focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none transition-all resize-none text-lg leading-relaxed shadow-inner"
             placeholder="Structure your answer clearly. For behavioral questions, try the STAR method (Situation, Task, Action, Result)..."
@@ -351,7 +447,7 @@ const Interview = () => {
           <div className="card p-6 bg-gradient-to-br from-primary-600 to-indigo-600 text-white border-none shadow-xl">
             <h3 className="text-center font-bold text-sm uppercase tracking-widest opacity-80 mb-2">Confidence Level</h3>
             <div className="text-5xl font-black text-center mb-4">
-              {currentEval.score === 'great' ? '95%' : currentEval.score === 'good' ? '75%' : '45%'}
+              {currentEval.confidence}%
             </div>
             <p className="text-xs text-center opacity-70">Based on structured response analysis and domain relevancy.</p>
           </div>

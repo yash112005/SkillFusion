@@ -2,7 +2,7 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
 const crypto = require('crypto');
-const nodemailer = require('nodemailer');
+const { sendEmail } = require('../utils/emailService');
 const { forgotPasswordTemplate } = require('../utils/templateemail');
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -273,41 +273,14 @@ const forgotPassword = async (req, res) => {
     // Create reset url
     const resetUrl = `${process.env.FRONTEND_URL}/resetpassword/${resetToken}`;
 
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-      console.error('Missing email configuration');
+    if (!process.env.RESEND_API_KEY) {
+      console.error('Missing Resend configuration');
       return res.status(500).json({ message: 'Server email configuration is missing' });
-    }
-
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false,
-      requireTLS: true,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-      },
-      connectionTimeout: 15000,
-      greetingTimeout: 15000,
-      socketTimeout: 20000
-    });
-
-    // Verify connection configuration
-    try {
-      await transporter.verify();
-      console.log('SMTP connection verified');
-    } catch (verifyError) {
-      console.error('SMTP Verification Error:', verifyError);
-      return res.status(500).json({ 
-        message: 'Could not connect to email server', 
-        error: verifyError.message 
-      });
     }
 
     const { subject, html } = forgotPasswordTemplate(resetUrl);
 
-    await transporter.sendMail({
-      from: `"SkillFusion Support" <${process.env.EMAIL_USER}>`,
+    await sendEmail({
       to: user.email,
       subject,
       html

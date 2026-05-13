@@ -47,7 +47,8 @@ exports.submitAnswer = async (req, res) => {
           question,
           answer,
           score: evaluation.score,
-          feedback: evaluation.feedback
+          feedback: evaluation.feedback,
+          confidence: evaluation.confidence
         }
       }
     });

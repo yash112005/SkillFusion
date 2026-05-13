@@ -415,12 +415,16 @@ async function evaluateInterviewAnswer(question, answer) {
     - Always be constructive and encouraging, never harsh
     - Point out strengths and provide specific advice for improvement (2-3 sentences).
 
+    Confidence evaluation:
+    - Provide a "confidence" score (0-100) based on how well the candidate articulated their thoughts and the depth of their answer.
+
     Return ONLY a valid JSON object.
     No markdown. No backticks. No extra text.
 
     Format:
-    {"score": "great" | "good" | "needs improvement", "feedback": "Your 2–3 sentence feedback here."}
+    {"score": "great" | "good" | "needs improvement", "feedback": "Your 2–3 sentence feedback here.", "confidence": 85}
   `;
+
 
   try {
     const result = await retryWithBackoff(() => model.generateContent(prompt));

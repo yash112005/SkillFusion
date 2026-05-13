@@ -9,7 +9,8 @@ const mockInterviewSchema = new mongoose.Schema({
     question: String,
     answer: String,
     score: String, // 'great' | 'good' | 'needs improvement'
-    feedback: String
+    feedback: String,
+    confidence: Number
   }],
   overallScore: { type: Number },
   status: { type: String, enum: ['in-progress', 'completed'], default: 'in-progress' }

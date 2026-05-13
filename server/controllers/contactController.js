@@ -1,5 +1,5 @@
 const Contact = require('../models/contact');
-const nodemailer = require('nodemailer');
+const { sendEmail } = require('../utils/emailService');
 const { contactEmailTemplate } = require('../utils/templateemail');
 
 const submitContactForm = async (req, res) => {
@@ -9,20 +9,9 @@ const submitContactForm = async (req, res) => {
     const newContact = new Contact({ name, email, subject, message });
     await newContact.save();
 
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 465,
-      secure: true,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-      }
-    });
-
     const { subject: emailSubject, html } = contactEmailTemplate({ name, email, subject, message });
 
-    await transporter.sendMail({
-      from: `"SkillFusion Contact" <${process.env.EMAIL_USER}>`,
+    await sendEmail({
       to: process.env.EMAIL_USER,
       replyTo: email,
       subject: emailSubject,
