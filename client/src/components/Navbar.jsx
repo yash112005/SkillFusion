@@ -49,6 +49,7 @@ const Navbar = () => {
     { name: "Upload", path: "/upload" },
     { name: "Results", path: "/results" },
     { name: "Build Resume", path: "/resume-builder" },
+    { name: "Mock Interview", path: "/mock/interview" },
     { name: "Pricing", path: "/pricing" },
     { name: "Contact", path: "/contact" },
   ];

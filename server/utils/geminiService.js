@@ -149,7 +149,7 @@ async function geminiaiAnalyzer(resumeText, jobText) {
   resumeText = cleaningText(resumeText);
   jobText    = cleaningText(jobText);
 
-  const model = client.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const model = client.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
 
   const prompt = `
@@ -320,7 +320,7 @@ function cleaningText(text) {
 }
 
 async function generateResumeContent(promptType, data, jobDescription = "") {
-  const model = client.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const model = client.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
   let prompt = "";
 
   if (promptType === "summary") {
@@ -356,7 +356,7 @@ async function generateResumeContent(promptType, data, jobDescription = "") {
 
 
 async function generateInterviewQuestions(role, level, type, count) {
-  const model = client.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const model = client.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
   
   const prompt = `
     You are an expert technical interviewer and career coach with 15+ years of experience hiring for top tech companies. 
@@ -397,7 +397,7 @@ async function generateInterviewQuestions(role, level, type, count) {
 }
 
 async function evaluateInterviewAnswer(question, answer) {
-  const model = client.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const model = client.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
   
   const prompt = `
     You are an expert technical interviewer and career coach with 15+ years of experience.
@@ -437,7 +437,7 @@ async function evaluateInterviewAnswer(question, answer) {
 async function multiJDCompare(resumeText, jds = []) {
   if (!jds.length) return [];
 
-  const model = client.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const model = client.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
   const results = [];
   
@@ -500,7 +500,7 @@ async function multiJDCompare(resumeText, jds = []) {
 }
 
 async function generateJDRefinements(jobTitle, currentJD, applicantData) {
-  const model = client.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const model = client.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
   
   const prompt = `
     You are an expert recruitment consultant. Analyze the following recruitment data and provide 2-4 specific, actionable suggestions for the recruiter to improve the Job Description (JD).
@@ -535,7 +535,7 @@ async function generateJDRefinements(jobTitle, currentJD, applicantData) {
 }
 
 async function generateSkillGapRoadmap(missingSkills, role) {
-  const model = client.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const model = client.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
   
   const prompt = `
     You are an expert technical mentor and career coach.
