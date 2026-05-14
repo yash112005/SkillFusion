@@ -78,7 +78,7 @@ const generateMatch = async (req, res) => {
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({
-      model: 'gemini-1.5-flash'
+      model: 'gemini-2.5-flash-lite'
     });
 
     const prompt = `Compare the following resume with the job description.
