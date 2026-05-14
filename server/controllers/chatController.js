@@ -18,49 +18,47 @@ const handleSkillyChat = async (req, res) => {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+    
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-1.5-flash",
+      systemInstruction: `
+        You are Skilly, a helpful AI assistant in a job search and resume builder app.
+        Your identity: Friendly, clear, and concise. Solve doubts fast.
+        Your name is Skilly.
+        
+        User Role: ${userRole}
+        
+        Context Awareness:
+        - Has Resume Uploaded: ${context.hasResume ? 'Yes' : 'No'}
+        - Has JD Uploaded: ${context.hasJD ? 'Yes' : 'No'}
+        - Current Match Score: ${context.matchScore || 'N/A'}
+        ${context.resumeText ? `Resume Content: ${context.resumeText.substring(0, 1000)}...` : ''}
+        ${context.jdText ? `JD Content: ${context.jdText.substring(0, 1000)}...` : ''}
 
-    const systemPrompt = `
-      You are Skilly, a helpful AI assistant in a job search and resume builder app.
-      Your identity: Friendly, clear, and concise. Solve doubts fast.
-      Your name is Skilly.
-      
-      User Role: ${userRole}
-      
-      Context Awareness:
-      - Has Resume Uploaded: ${context.hasResume ? 'Yes' : 'No'}
-      - Has JD Uploaded: ${context.hasJD ? 'Yes' : 'No'}
-      - Current Match Score: ${context.matchScore || 'N/A'}
-      ${context.resumeText ? `Resume Content: ${context.resumeText.substring(0, 1000)}...` : ''}
-      ${context.jdText ? `JD Content: ${context.jdText.substring(0, 1000)}...` : ''}
+        Answer Domains:
+        1. Resume Doubts (format, pages, summary, bullet points, ATS).
+        2. Job Search Tips (fresher tips, cold emails, referrals, LinkedIn, interviews).
+        3. App Usage (how to upload, where to paste JD, how score works).
+        4. JD & Match Score (explaining scores, missing skills, ATS keywords).
 
-      Answer Domains:
-      1. Resume Doubts (format, pages, summary, bullet points, ATS).
-      2. Job Search Tips (fresher tips, cold emails, referrals, LinkedIn, interviews).
-      3. App Usage (how to upload, where to paste JD, how score works).
-      4. JD & Match Score (explaining scores, missing skills, ATS keywords).
-
-      Rules:
-      - Keep answers SHORT (max 3-4 sentences for simple doubts).
-      - Use simple numbered lists for complex doubts (max 5 points).
-      - Reference the user's uploaded resume/JD if available.
-      - Never say "Great question!" or filler phrases.
-      - Always end with ONE optional follow-up offer (e.g., "Want me to explain [topic] too?").
-      - If user is a recruiter, shift perspective to hiring/JD optimization.
-      - If user asks something out of scope, politely redirect to resume/job search.
-      - If user says "thanks/ok", respond with "Anytime! Ask if anything else comes up."
-      - If user asks who you are: "I'm Skilly — your AI assistant for resumes, job search, and everything in this app!"
-    `;
+        Rules:
+        - Keep answers SHORT (max 3-4 sentences for simple doubts).
+        - Use simple numbered lists for complex doubts (max 5 points).
+        - Reference the user's uploaded resume/JD if available.
+        - Never say "Great question!" or filler phrases.
+        - Always end with ONE optional follow-up offer (e.g., "Want me to explain [topic] too?").
+        - If user is a recruiter, shift perspective to hiring/JD optimization.
+        - If user asks something out of scope, politely redirect to resume/job search.
+        - If user says "thanks/ok", respond with "Anytime! Ask if anything else comes up."
+        - If user asks who you are: "I'm Skilly — your AI assistant for resumes, job search, and everything in this app!"
+      `
+    });
 
     // Format history for Gemini (must alternate user/model)
     const formattedHistory = [];
     
-    formattedHistory.push({ role: "user", parts: [{ text: systemPrompt }] });
-    formattedHistory.push({ role: "model", parts: [{ text: "Understood. I am Skilly, your helpful AI assistant. I will provide concise, helpful, and contextual assistance for resumes and job searches." }] });
-
     (history || []).forEach(msg => {
       const role = msg.role === 'user' ? 'user' : 'model';
-      // If same role as last, append to last message parts (Gemini doesn't like consecutive same roles)
       if (formattedHistory.length > 0 && formattedHistory[formattedHistory.length - 1].role === role) {
         formattedHistory[formattedHistory.length - 1].parts[0].text += `\n${msg.content}`;
       } else {
@@ -68,12 +66,27 @@ const handleSkillyChat = async (req, res) => {
       }
     });
 
+    // Ensure history ends with a model message (since sendMessage appends a user message)
+    if (formattedHistory.length > 0 && formattedHistory[formattedHistory.length - 1].role === 'user') {
+      formattedHistory.push({ role: 'model', parts: [{ text: "I understand. How else can I help?" }] });
+    } else if (formattedHistory.length === 0) {
+      // If no history, add a dummy exchange to satisfy Gemini's chat expectations if needed
+      // Actually, startChat can take empty history.
+    }
+
     const chat = model.startChat({
       history: formattedHistory
     });
 
     const result = await retryWithBackoff(() => chat.sendMessage(message));
-    const responseText = result.response.text();
+    let responseText = "I couldn't generate a response.";
+    try {
+      responseText = result.response.text();
+    } catch (e) {
+      if (result.response.candidates?.[0]?.finishReason === 'SAFETY') {
+        responseText = "I'm sorry, I can't answer that due to safety policies. Let's talk about resumes!";
+      }
+    }
 
     res.json({ content: responseText });
   } catch (error) {
