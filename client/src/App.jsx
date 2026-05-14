@@ -11,6 +11,7 @@ import DashboardRecruiter from './pages/DashboardRecruiter';
 import JobDetails from './pages/JobDetails';
 import DashboardAdmin from './pages/DashboardAdmin';
 import PostJob from './pages/PostJob';
+import PortfolioBuilder from './pages/PortfolioBuilder';
 import CandidateAnalytics from './pages/CandidateAnalytics';
 import Pricing from './pages/Pricing';
 import About from './pages/About';
@@ -77,6 +78,11 @@ function App() {
               </ProtectedRoute>
             } />
 
+            <Route path="/portfolio-builder" element={
+              <ProtectedRoute allowedRoles={['candidate', 'recruiter']}>
+                <PortfolioBuilder />
+              </ProtectedRoute>
+            } />
             <Route path="/dashboard/candidate" element={
               <ProtectedRoute allowedRoles={['candidate']}>
                 <DashboardCandidate />

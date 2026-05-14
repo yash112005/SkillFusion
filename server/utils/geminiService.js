@@ -649,6 +649,66 @@ async function generateSkillGapRoadmap(missingSkills, role) {
   }
 }
 
+async function generatePortfolioData(resumeText, jdText) {
+  const model = client.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+  
+  const prompt = `
+    You are an expert Career Agent and Portfolio Strategist.
+    Your goal is to transform a candidate's resume into a highly relevant, recruiter-ready portfolio tailored to a specific Job Description (JD).
+    
+    Resume: "${resumeText.substring(0, 4000)}"
+    JD: "${jdText.substring(0, 2000)}"
+    
+    Analyze the resume and JD to:
+    1. Identify all projects mentioned in the resume.
+    2. Rank them by relevance to the JD.
+    3. Rewrite each project description to highlight the skills and impacts most valued by the JD.
+    4. Generate a "Why I Fit" summary specifically for this role.
+    5. Suggest a color theme and layout style (e.g., "Modern Blue", "Tech Dark", "Creative Purple").
+    
+    Return strictly a JSON object with:
+    - portfolioScore: 0-100
+    - recruiterAttentionScore: 0-100
+    - intro: {
+        headline: "A punchy professional headline",
+        fitSummary: "A 2-3 sentence summary of why the candidate fits this specific role"
+      }
+    - projects: array of {
+        title: "Project name",
+        relevanceScore: 0-100,
+        isMostRelevant: boolean,
+        description: "Professionally rewritten 2-3 sentence description emphasizing JD-relevant impact",
+        techStack: ["React", "TypeScript", etc.],
+        achievements: ["Achievement 1", "Achievement 2"],
+        recruiterImpact: "Short note on why a recruiter will care about this specific project"
+      }
+    - analytics: {
+        skillVisibility: "Analysis of how well key skills are showcased",
+        impactMeter: 0-100,
+        completeness: 0-100
+      }
+    - exports: {
+        githubReadme: "A full markdown string for a professional GitHub profile README",
+        pptSkeleton: "A structured outline for a 5-slide interview presentation"
+      }
+    - theme: {
+        primaryColor: "hex code",
+        secondaryColor: "hex code",
+        style: "Modern/Tech/Creative"
+      }
+  `;
+
+  try {
+    const result = await retryWithBackoff(() => model.generateContent(prompt));
+    let text = result.response.text().trim();
+    text = cleanAIJSON(text);
+    return JSON.parse(text);
+  } catch (err) {
+    console.error("Error generating portfolio data:", err);
+    throw new Error("Failed to generate portfolio data");
+  }
+}
+
 async function generateRecruiterInsights(stats, jobs, applications) {
   const model = client.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
   
@@ -712,7 +772,8 @@ module.exports = {
   generateSkillGapRoadmap,
   generateRecruiterInsights,
   analyzeBias,
-  inclusiveRewrite
+  inclusiveRewrite,
+  generatePortfolioData
 };
 
 

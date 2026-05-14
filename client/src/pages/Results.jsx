@@ -371,9 +371,21 @@ const Results = () => {
                   <Medal className="w-5 h-5 mr-2" />
                   View Badge
                 </Link>
+                <button 
+                  onClick={() => navigate('/portfolio-builder', { 
+                    state: { 
+                      resumeText: displayMatch?.resumeText, 
+                      jdText: displayMatch?.jdText 
+                    } 
+                  })}
+                  className="inline-flex items-center px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-700 text-white font-bold shadow-lg hover:shadow-xl transition-all hover:-translate-y-1 no-underline"
+                >
+                  <Sparkles className="w-5 h-5 mr-2" />
+                  Build AI Portfolio
+                </button>
                 <Link 
                   to="/resume-builder" 
-                  className="inline-flex items-center px-5 py-2.5 rounded-xl bg-gradient-to-r from-primary-600 to-indigo-600 text-white font-bold shadow-lg hover:shadow-xl transition-all hover:-translate-y-1 no-underline"
+                  className="inline-flex items-center px-5 py-2.5 rounded-xl bg-white dark:bg-gray-800 text-primary-600 dark:text-primary-400 font-bold shadow-lg hover:shadow-xl transition-all hover:-translate-y-1 border border-primary-100 dark:border-primary-900/30 no-underline"
                 >
                   <FileText className="w-5 h-5 mr-2" />
                   Build Resume

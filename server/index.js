@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 const authRoutes = require('./routes/auth');
 const matchRoutes = require('./routes/match');
+const portfolioRoutes = require('./routes/portfolio');
 const userRoutes = require('./routes/users');
 const ContactRoutes = require('./routes/Contact');
 
@@ -48,6 +49,7 @@ app.get('/', (req, res) => {
 });
 app.use('/api/auth', authRoutes);
 app.use('/api/match', matchRoutes);
+app.use('/api/portfolio', portfolioRoutes);
 
 app.use('/api/users', userRoutes);
 const jobRoutes = require('./routes/jobs');

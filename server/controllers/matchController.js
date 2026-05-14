@@ -144,6 +144,8 @@ ${jdText.substring(0, 5000)}
 
     res.status(201).json({
       ...match.toObject(),
+      resumeText,
+      jdText,
       usage_count: user.usage_count,
       limit: isPro ? null : FREE_MATCH_LIMIT,
       isPro
