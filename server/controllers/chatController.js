@@ -20,7 +20,7 @@ const handleSkillyChat = async (req, res) => {
     const genAI = new GoogleGenerativeAI(apiKey);
     
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-flash",
+      model: "gemini-2.5-flash-lite",
       systemInstruction: `
         You are Skilly, a helpful AI assistant in a job search and resume builder app.
         Your identity: Friendly, clear, and concise. Solve doubts fast.
