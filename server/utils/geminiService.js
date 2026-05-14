@@ -538,6 +538,67 @@ async function generateJDRefinements(jobTitle, currentJD, applicantData) {
   }
 }
 
+async function analyzeBias(jdText) {
+  const model = client.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+  
+  const prompt = `
+    You are an expert Diversity, Equity, and Inclusion (DEI) consultant. 
+    Analyze the following Job Description (JD) for biased, exclusionary, or non-inclusive language.
+    
+    JD Text: "${jdText}"
+    
+    Detect:
+    1. Gender bias (e.g., "mankind", "ninja", "rockstar").
+    2. Age bias (e.g., "young", "energetic", "digital native").
+    3. Aggressive/Competitive bias (e.g., "crush the competition", "sales hunter").
+    4. Disability/Accessibility bias (e.g., "able-bodied", "must stand for long hours" when not strictly required).
+    5. Cultural/Language bias (e.g., "native English speaker").
+    
+    Return strictly a JSON object with:
+    - inclusiveScore: 0-100 (100 is perfectly inclusive).
+    - biasRiskLevel: "Low", "Medium", "High".
+    - findings: array of {
+        phrase: "the problematic phrase",
+        category: "Gender", "Age", "Aggressive", "Accessibility", "Other",
+        severity: "Low", "Medium", "High",
+        explanation: "Why it is problematic",
+        alternative: "Inclusive suggestion"
+      }
+    - summary: 1-2 sentence overview of the JD's inclusivity.
+  `;
+
+  try {
+    const result = await retryWithBackoff(() => model.generateContent(prompt));
+    let text = result.response.text().trim();
+    text = cleanAIJSON(text);
+    return JSON.parse(text);
+  } catch (err) {
+    console.error("Error analyzing JD bias:", err);
+    throw new Error("Failed to analyze JD bias");
+  }
+}
+
+async function inclusiveRewrite(jdText) {
+  const model = client.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+  
+  const prompt = `
+    Rewrite the following Job Description (JD) to be more inclusive, welcoming, and free of bias.
+    Keep the professional tone and ensure all core requirements are still clear, but replace all exclusionary language with inclusive alternatives.
+    
+    Original JD: "${jdText}"
+    
+    Return ONLY the rewritten JD text.
+  `;
+
+  try {
+    const result = await retryWithBackoff(() => model.generateContent(prompt));
+    return result.response.text().trim();
+  } catch (err) {
+    console.error("Error rewriting JD:", err);
+    throw new Error("Failed to rewrite JD");
+  }
+}
+
 async function generateSkillGapRoadmap(missingSkills, role) {
   const model = client.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
   
@@ -649,7 +710,9 @@ module.exports = {
   multiJDCompare,
   generateJDRefinements,
   generateSkillGapRoadmap,
-  generateRecruiterInsights
+  generateRecruiterInsights,
+  analyzeBias,
+  inclusiveRewrite
 };
 
 
