@@ -27,6 +27,7 @@ import GamifiedCandidateFeedback from './components/GamifiedCandidateFeedback';
 
 import Loader from './components/Loader';
 import SkillyChat from './components/SkillyChat';
+import RecruiterDashboardAgent from './components/RecruiterDashboardAgent';
 import ErrorBoundary from './components/ErrorBoundary';
 import { useAuth } from './context/AuthContext';
 
@@ -152,6 +153,7 @@ function App() {
         </main>
         <Footer />
         <SkillyChat />
+        <RecruiterDashboardAgent />
       </div>
     </Router>
     </ErrorBoundary>

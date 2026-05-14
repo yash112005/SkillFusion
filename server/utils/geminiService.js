@@ -588,6 +588,54 @@ async function generateSkillGapRoadmap(missingSkills, role) {
   }
 }
 
+async function generateRecruiterInsights(stats, jobs, applications) {
+  const model = client.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+  
+  const prompt = `
+    You are an elite Recruitment Strategist AI. Analyze the following recruiter dashboard data and provide 3-5 autonomous, high-impact insights.
+    
+    Data Summary:
+    - Total Active Jobs: ${jobs.length}
+    - Total Applicants: ${stats.totalApplicants}
+    - Average Match Score: ${stats.avgMatchScore}%
+    
+    Specific Metrics:
+    Jobs: ${JSON.stringify(jobs.map(j => ({ title: j.title, company: j.company, applicants: applications.filter(a => a.jobId.toString() === j._id.toString()).length })))}
+    Top Missing Skills (agg): ${JSON.stringify(applications.slice(0, 20).flatMap(a => a.missingKeywords || []))}
+    
+    Insight Rules:
+    - Identify hiring bottlenecks (e.g., "Job X has 0 matches above 80%").
+    - Identify skill trends (e.g., "70% of candidates for Role Y are missing Skill Z").
+    - Provide actionable advice (e.g., "Adjust JD for Role A to focus more on Skill B").
+    - Keep each insight concise (1 sentence).
+    - Return strictly as a JSON object with a 'headline' and an array of 'insights'.
+    
+    Format:
+    {
+      "headline": "Hiring Pipeline Analysis",
+      "insights": [
+        "Insight one...",
+        "Insight two..."
+      ],
+      "priority": "high" | "medium" | "low"
+    }
+  `;
+
+  try {
+    const result = await retryWithBackoff(() => model.generateContent(prompt));
+    let text = result.response.text().trim();
+    text = cleanAIJSON(text);
+    return JSON.parse(text);
+  } catch (err) {
+    console.error("Error generating recruiter insights:", err);
+    return {
+      headline: "Strategic Overview",
+      insights: ["Reviewing applicant pool for optimization...", "Monitoring high-priority roles..."],
+      priority: "medium"
+    };
+  }
+}
+
 module.exports = {
   getEmbedding,
   geminiaiAnalyzer,
@@ -600,7 +648,8 @@ module.exports = {
   evaluateInterviewAnswer,
   multiJDCompare,
   generateJDRefinements,
-  generateSkillGapRoadmap
+  generateSkillGapRoadmap,
+  generateRecruiterInsights
 };
 
 

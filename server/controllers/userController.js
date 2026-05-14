@@ -2,6 +2,7 @@ const User = require('../models/User');
 const Match = require('../models/Match');
 const Job = require('../models/Job');
 const Application = require('../models/Application');
+const { generateRecruiterInsights } = require('../utils/geminiService');
 
 const getRecruiterStats = async (req, res) => {
   try {
@@ -141,10 +142,35 @@ const getJobApplications = async (req, res) => {
   }
 };
 
+const getRecruiterInsights = async (req, res) => {
+  try {
+    const jobs = await Job.find({ recruiterId: req.user._id });
+    const allApps = await Application.find({ recruiterId: req.user._id });
+    
+    let avgScore = 0;
+    if (allApps.length > 0) {
+      const sum = allApps.reduce((acc, app) => acc + app.matchScore, 0);
+      avgScore = Math.floor(sum / allApps.length);
+    }
+
+    const stats = {
+      totalApplicants: allApps.length,
+      avgMatchScore: avgScore
+    };
+
+    const insights = await generateRecruiterInsights(stats, jobs, allApps);
+    res.json(insights);
+  } catch (error) {
+    console.error("Recruiter insights error:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = { 
   getRecruiterStats, 
   getAdminStats, 
   getAllUsers, 
   getCandidateAnalytics,
-  getJobApplications 
+  getJobApplications,
+  getRecruiterInsights
 };
