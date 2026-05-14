@@ -175,6 +175,10 @@ const InterviewReport = ({ data }) => {
     year: 'numeric', month: 'long', day: 'numeric' 
   });
 
+  const displayRole = role || "Candidate";
+  const displayLevel = level || "";
+  const displayType = type || "Mock";
+
   return (
     <Document>
       <Page size="A4" style={styles.page}>
@@ -189,8 +193,8 @@ const InterviewReport = ({ data }) => {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.title}>{level} {role}</Text>
-          <Text style={styles.subtitle}>{type} Interview Assessment</Text>
+          <Text style={styles.title}>{displayLevel} {displayRole}</Text>
+          <Text style={styles.subtitle}>{displayType} Interview Assessment</Text>
         </View>
 
         <View style={styles.card}>
@@ -200,7 +204,7 @@ const InterviewReport = ({ data }) => {
               <Text style={[styles.scoreLabel, { color: scoreColor.text }]}>Score</Text>
             </View>
             <Text style={styles.summaryText}>
-              You completed a {evaluations.length}-question {type.toLowerCase()} interview for a {level.toLowerCase()} {role} position. 
+              You completed a {evaluations?.length || 0}-question {(displayType || "").toLowerCase()} interview for a {(displayLevel || "").toLowerCase()} {displayRole} position. 
               Overall, you achieved a score of {overallScore || 0}%.
             </Text>
           </View>
