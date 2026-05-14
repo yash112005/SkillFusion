@@ -27,7 +27,7 @@ import {
 const Interview = () => {
   const { user } = useAuth();
   const location = useLocation();
-  const [step, setStep] = useState(location.state?.step || 'setup');
+  const [step, setStep] = useState(location.state?.step || 'setup'); // 'setup' | 'interview' | 'feedback' | 'summary'
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     role: '',
@@ -74,7 +74,6 @@ const Interview = () => {
   const types = ['Technical', 'Behavioral', 'System Design', 'Mixed'];
   const counts = [3, 5, 8];
 
-  // FIX 2: optional chaining on evaluation?.score
   const greatCount = evaluations.filter(e => e.evaluation?.score === 'great').length;
   const score = questions.length > 0 ? Math.round((greatCount / questions.length) * 100) : 0;
 
@@ -180,6 +179,7 @@ const Interview = () => {
     }
   };
 
+
   const handleStart = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -198,12 +198,11 @@ const Interview = () => {
     }
   };
 
-  // FIX 3: corrected endpoint from /evaluate to /submit-answer
   const handleSubmitAnswer = async () => {
     if (!answer.trim()) return;
     setLoading(true);
     try {
-      const res = await axios.post('/api/interview/submit-answer', {
+      const res = await axios.post('/api/interview/evaluate', {
         interviewId: interviewId,
         question: questions[currentIdx],
         answer: answer
@@ -225,31 +224,32 @@ const Interview = () => {
     setEvaluations(updatedEvaluations);
     setAnswer('');
     setCurrentEval(null);
-
+    
     if (currentIdx + 1 < questions.length) {
       setCurrentIdx(currentIdx + 1);
       setStep('interview');
     } else {
       setLoading(true);
-      // FIX 2: optional chaining in score calculation
+      // Calculate overall score safely
       const greatCount = updatedEvaluations.filter(e => e.evaluation?.score === 'great').length;
-      const totalQuestions = questions.length || 1;
+      const totalQuestions = questions.length || 1; // Prevent division by zero
       const overallScore = Math.round((greatCount / totalQuestions) * 100) || 0;
-
+      
       try {
         await axios.post('/api/interview/complete', {
           interviewId: interviewId,
           overallScore: overallScore,
-          evaluations: updatedEvaluations
+          evaluations: updatedEvaluations // Send evaluations to backend for report generation/email
         }, {
           headers: { Authorization: `Bearer ${user.token}` }
         });
       } catch (err) {
         console.error("Failed to save final progress", err);
+        // Even if API fails, we show the summary to the user
       } finally {
         setLoading(false);
       }
-
+      
       setStep('summary');
     }
   };
@@ -451,62 +451,57 @@ const Interview = () => {
     </div>
   );
 
-  // FIX 1: renderFeedback converted to regular function with null guard at top
-  const renderFeedback = () => {
-    if (!currentEval) return null;
+  const renderFeedback = () => (
+    <div className="max-w-4xl mx-auto animate-fade-in">
+      <div className="text-center mb-10">
+        <div className={`inline-flex items-center px-4 py-2 rounded-full mb-4 font-bold text-sm uppercase tracking-widest ${
+          currentEval.score === 'great' ? 'bg-green-100 text-green-700' :
+          currentEval.score === 'good' ? 'bg-yellow-100 text-yellow-700' :
+          'bg-red-100 text-red-700'
+        }`}>
+          {currentEval.score === 'great' && <Trophy className="w-4 h-4 mr-2" />}
+          Evaluation: {currentEval.score}
+        </div>
+        <h2 className="text-4xl font-black text-gray-900 dark:text-white">Expert Insights</h2>
+      </div>
 
-    return (
-      <div className="max-w-4xl mx-auto animate-fade-in">
-        <div className="text-center mb-10">
-          <div className={`inline-flex items-center px-4 py-2 rounded-full mb-4 font-bold text-sm uppercase tracking-widest ${
-            currentEval.score === 'great' ? 'bg-green-100 text-green-700' :
-            currentEval.score === 'good' ? 'bg-yellow-100 text-yellow-700' :
-            'bg-red-100 text-red-700'
-          }`}>
-            {currentEval.score === 'great' && <Trophy className="w-4 h-4 mr-2" />}
-            Evaluation: {currentEval.score}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="md:col-span-2 space-y-6">
+          <div className="card p-8 bg-white dark:bg-dark-card border-l-8 border-l-primary-600">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+              <MessageSquare className="w-5 h-5 mr-3 text-primary-500" /> Feedback from AI Coach
+            </h3>
+            <p className="text-gray-700 dark:text-gray-300 text-lg leading-relaxed italic">
+              "{currentEval.feedback}"
+            </p>
           </div>
-          <h2 className="text-4xl font-black text-gray-900 dark:text-white">Expert Insights</h2>
+
+          <div className="card p-8 bg-gray-50 dark:bg-gray-800/50 border-none">
+            <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-4">Original Question</h3>
+            <p className="text-gray-900 dark:text-white font-medium">{questions[currentIdx]}</p>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="md:col-span-2 space-y-6">
-            <div className="card p-8 bg-white dark:bg-dark-card border-l-8 border-l-primary-600">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center">
-                <MessageSquare className="w-5 h-5 mr-3 text-primary-500" /> Feedback from AI Coach
-              </h3>
-              <p className="text-gray-700 dark:text-gray-300 text-lg leading-relaxed italic">
-                "{currentEval.feedback}"
-              </p>
+        <div className="space-y-6">
+          <div className="card p-6 bg-gradient-to-br from-primary-600 to-indigo-600 text-white border-none shadow-xl">
+            <h3 className="text-center font-bold text-sm uppercase tracking-widest opacity-80 mb-2">Confidence Level</h3>
+            <div className="text-5xl font-black text-center mb-4">
+              {currentEval.confidence}%
             </div>
-
-            <div className="card p-8 bg-gray-50 dark:bg-gray-800/50 border-none">
-              <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-4">Original Question</h3>
-              <p className="text-gray-900 dark:text-white font-medium">{questions[currentIdx]}</p>
-            </div>
+            <p className="text-xs text-center opacity-70">Based on structured response analysis and domain relevancy.</p>
           </div>
 
-          <div className="space-y-6">
-            <div className="card p-6 bg-gradient-to-br from-primary-600 to-indigo-600 text-white border-none shadow-xl">
-              <h3 className="text-center font-bold text-sm uppercase tracking-widest opacity-80 mb-2">Confidence Level</h3>
-              <div className="text-5xl font-black text-center mb-4">
-                {currentEval.confidence}%
-              </div>
-              <p className="text-xs text-center opacity-70">Based on structured response analysis and domain relevancy.</p>
-            </div>
-
-            <button
-              onClick={handleNext}
-              className="w-full btn-primary py-4 text-lg flex items-center justify-center"
-            >
-              {currentIdx + 1 < questions.length ? 'Next Question' : 'Finish Interview'}
-              <ArrowRight className="w-5 h-5 ml-2" />
-            </button>
-          </div>
+          <button
+            onClick={handleNext}
+            className="w-full btn-primary py-4 text-lg flex items-center justify-center"
+          >
+            {currentIdx + 1 < questions.length ? 'Next Question' : 'Finish Interview'}
+            <ArrowRight className="w-5 h-5 ml-2" />
+          </button>
         </div>
       </div>
-    );
-  };
+    </div>
+  );
 
   const renderSummary = () => {
     return (
@@ -529,8 +524,7 @@ const Interview = () => {
             <div className="text-xs font-bold text-gray-500 uppercase tracking-widest">Great Answers</div>
           </div>
           <div className="card p-6 text-center">
-            {/* FIX 2: optional chaining on evaluation?.score */}
-            <div className="text-3xl font-black text-yellow-500 mb-1">{evaluations.filter(e => e.evaluation?.score === 'good').length}</div>
+            <div className="text-3xl font-black text-yellow-500 mb-1">{evaluations.filter(e => e.evaluation.score === 'good').length}</div>
             <div className="text-xs font-bold text-gray-500 uppercase tracking-widest">Good Answers</div>
           </div>
           <div className="card p-6 text-center border-t-4 border-t-primary-600">
@@ -550,13 +544,12 @@ const Interview = () => {
                   <h4 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-2">Question {idx + 1}</h4>
                   <p className="text-xl font-bold text-gray-900 dark:text-white">{item.question}</p>
                 </div>
-                {/* FIX 2: optional chaining on evaluation?.score */}
                 <span className={`px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest ${
-                  item.evaluation?.score === 'great' ? 'bg-green-100 text-green-700' :
-                  item.evaluation?.score === 'good' ? 'bg-yellow-100 text-yellow-700' :
+                  item.evaluation.score === 'great' ? 'bg-green-100 text-green-700' :
+                  item.evaluation.score === 'good' ? 'bg-yellow-100 text-yellow-700' :
                   'bg-red-100 text-red-700'
                 }`}>
-                  {item.evaluation?.score ?? 'N/A'}
+                  {item.evaluation.score}
                 </span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -570,8 +563,7 @@ const Interview = () => {
                   <h5 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3 flex items-center">
                     <BrainCircuit className="w-3 h-3 mr-2" /> AI Feedback
                   </h5>
-                  {/* FIX 2: optional chaining on evaluation?.feedback */}
-                  <p className="text-sm text-primary-700 dark:text-primary-400 font-medium">{item.evaluation?.feedback}</p>
+                  <p className="text-sm text-primary-700 dark:text-primary-400 font-medium">{item.evaluation.feedback}</p>
                 </div>
               </div>
             </div>
