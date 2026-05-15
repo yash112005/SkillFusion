@@ -1,8 +1,9 @@
 import React from 'react';
 import { 
-  ExternalLink, Github, Linkedin, Mail, MapPin, 
+  ExternalLink, Mail, MapPin, 
   Code, Award, Briefcase, User, Sparkles, Star
 } from 'lucide-react';
+import { Github } from '../SocialIcons';
 
 const PortfolioView = ({ data, theme }) => {
   if (!data) return null;

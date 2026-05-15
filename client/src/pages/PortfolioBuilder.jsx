@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { 
-  Sparkles, Save, Download, Share2, Github, FileText, 
+  Sparkles, Save, Download, Share2, FileText, 
   RefreshCw, Layout, Edit3, Eye, ArrowLeft, Zap,
   TrendingUp, BarChart3, Layers, Plus, Check, Copy
 } from 'lucide-react';
+import { Github } from '../components/SocialIcons';
 import { useAuth } from '../context/AuthContext';
 import Loader from '../components/Loader';
 import PortfolioView from '../components/portfolio/PortfolioView';
