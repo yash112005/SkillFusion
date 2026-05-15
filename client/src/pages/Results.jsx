@@ -7,7 +7,7 @@ import {
 } from 'recharts';
 import {
   ArrowLeft, Download, RefreshCw, CheckCircle, AlertTriangle,
-  Zap, FileText, ThumbsUp, ThumbsDown, Lock, Crown, Clock, TrendingUp, Medal, Award, Briefcase, Search, BrainCircuit, X, History, Plus
+  Zap, FileText, ThumbsUp, ThumbsDown, Lock, Crown, Clock, TrendingUp, Medal, Award, Briefcase, Sparkles, BrainCircuit, X, History, Plus
 } from 'lucide-react';
 import Loader from '../components/Loader';
 import { usePDF } from '@react-pdf/renderer';
