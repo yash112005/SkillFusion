@@ -63,10 +63,12 @@ const handleSkillyChat = async (req, res) => {
 
     (history || []).forEach((msg) => {
       const role = msg.role === "user" ? "user" : "model";
-      const lastEntry = formattedHistory[formattedHistory.length - 1];
+      
+      // CRITICAL: Gemini history MUST start with a 'user' message
+      if (formattedHistory.length === 0 && role === "model") return;
 
+      const lastEntry = formattedHistory[formattedHistory.length - 1];
       if (lastEntry && lastEntry.role === role) {
-        // Merge consecutive same-role messages to maintain strict alternation
         lastEntry.parts[0].text += `\n${msg.content}`;
       } else {
         formattedHistory.push({ role, parts: [{ text: msg.content }] });
