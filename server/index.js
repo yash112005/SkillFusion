@@ -7,6 +7,8 @@ const matchRoutes = require('./routes/match');
 const portfolioRoutes = require('./routes/portfolio');
 const userRoutes = require('./routes/users');
 const ContactRoutes = require('./routes/Contact');
+const paymentRoutes = require('./routes/payment');
+
 
 
 require('dotenv').config(); 
@@ -61,6 +63,8 @@ app.use('/api/interview', interviewRoutes);
 app.use('/api/contact', ContactRoutes);
 const feedbackRoutes = require('./routes/feedback');
 app.use('/api/feedback', feedbackRoutes);
+app.use('/api/payment', paymentRoutes);
+
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {

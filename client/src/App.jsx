@@ -14,6 +14,9 @@ import PostJob from './pages/PostJob';
 import PortfolioBuilder from './pages/PortfolioBuilder';
 import CandidateAnalytics from './pages/CandidateAnalytics';
 import Pricing from './pages/Pricing';
+import BillingDashboard from './pages/BillingDashboard';
+import AdminBilling from './pages/AdminBilling';
+
 import About from './pages/About';
 import Contact from './pages/Contact';
 import FAQ from './pages/FAQ';
@@ -59,6 +62,17 @@ function App() {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/resetpassword/:token" element={<ResetPassword />} />
             <Route path="/pricing" element={<Pricing />} />
+            <Route path="/billing" element={
+              <ProtectedRoute>
+                <BillingDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/billing" element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminBilling />
+              </ProtectedRoute>
+            } />
+
             
             <Route path="/upload" element={
               <ProtectedRoute allowedRoles={['candidate', 'recruiter']}>
