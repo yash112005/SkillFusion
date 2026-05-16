@@ -16,7 +16,9 @@ import {
 import { motion } from 'framer-motion';
 
 const BillingDashboard = () => {
-  const { user, token } = useAuth();
+  const { user } = useAuth();
+  const token = user?.token;
+
   const [loading, setLoading] = useState(true);
   const [billingData, setBillingData] = useState(null);
   const [invoices, setInvoices] = useState([]);

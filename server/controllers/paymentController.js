@@ -163,16 +163,19 @@ exports.handleWebhook = async (req, res) => {
   const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
   const signature = req.headers['x-razorpay-signature'];
 
+  // req.body is a Buffer because of express.raw()
   const shasum = crypto.createHmac('sha256', webhookSecret);
-  shasum.update(JSON.stringify(req.body));
+  shasum.update(req.body);
   const digest = shasum.digest('hex');
 
   if (digest !== signature) {
     return res.status(400).json({ message: 'Invalid signature' });
   }
 
-  const event = req.body.event;
-  const payload = req.body.payload;
+  const data = JSON.parse(req.body.toString());
+  const event = data.event;
+  const payload = data.payload;
+
 
   try {
     switch (event) {

@@ -16,8 +16,10 @@ const loadRazorpayScript = () => {
 };
 
 const Pricing = () => {
-  const { user, token } = useAuth();
+  const { user } = useAuth();
+  const token = user?.token;
   const navigate = useNavigate();
+
   const [loadingPlan, setLoadingPlan] = useState(null);
   const [billingCycle, setBillingCycle] = useState('monthly'); // 'monthly' or 'yearly'
 
@@ -143,9 +145,11 @@ const Pricing = () => {
       paymentObject.open();
 
     } catch (err) {
-      console.error(err);
-      alert('Error initiating checkout. Please try again.');
+      console.error('Checkout Error:', err);
+      const errorMsg = err.response?.data?.message || err.message || 'Error initiating checkout. Please try again.';
+      alert(errorMsg);
     } finally {
+
       setLoadingPlan(null);
     }
   };
