@@ -321,8 +321,11 @@ const resetPassword = async (req, res) => {
     await user.save();
 
     res.status(200).json({
-      success: true,
-      message: 'Password reset successful',
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      subscriptionPlan: user.subscriptionPlan,
       token: generateToken(user._id)
     });
   } catch (error) {

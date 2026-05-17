@@ -1,34 +1,69 @@
 const { Resend } = require('resend');
+const nodemailer = require('nodemailer');
 const dotenv = require('dotenv');
 dotenv.config();
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+
+// Initialize Nodemailer transporter as fallback
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 
 /**
- * Generic send email function using Resend
+ * Generic send email function using Resend with Nodemailer fallback
  */
 const sendEmail = async ({ to, subject, html }) => {
+  // 1. Try Resend first
+  if (resend) {
+    try {
+      console.log(`Attempting to send email via Resend to ${to}...`);
+      const { data, error } = await resend.emails.send({
+        from: 'SkillFusion <onboarding@resend.dev>', // Note: only works for registered email in free tier
+        to: [to],
+        subject: subject,
+        html: html,
+      });
+
+      if (error) {
+        console.warn('Resend API returned an error:', error.message);
+        console.log('Falling back to Nodemailer (Gmail)...');
+      } else {
+        console.log('Email sent successfully via Resend:', data.id);
+        return data;
+      }
+    } catch (resendError) {
+      console.warn('Resend SDK thrown an error:', resendError.message);
+      console.log('Falling back to Nodemailer (Gmail)...');
+    }
+  } else {
+    console.warn('Resend API key is missing. Falling back to Nodemailer (Gmail)...');
+  }
+
+  // 2. Fallback to Nodemailer
   try {
-    if (!process.env.RESEND_API_KEY) {
-      throw new Error('RESEND_API_KEY is missing');
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      throw new Error('Nodemailer configuration (EMAIL_USER / EMAIL_PASS) is missing.');
     }
 
-    const { data, error } = await resend.emails.send({
-      from: 'SkillFusion <onboarding@resend.dev>', // Note: only works for registered email in free tier
-      to: [to],
+    console.log(`Attempting to send email via Nodemailer (Gmail) to ${to}...`);
+    const mailOptions = {
+      from: `"SkillFusion" <${process.env.EMAIL_USER}>`,
+      to: to,
       subject: subject,
       html: html,
-    });
+    };
 
-    if (error) {
-      console.error('Resend API Error:', error);
-      throw new Error(error.message);
-    }
-
-    return data;
-  } catch (error) {
-    console.error('Email Service Error (sendEmail):', error);
-    throw error;
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Email sent successfully via Nodemailer:', info.messageId);
+    return { id: info.messageId, provider: 'nodemailer' };
+  } catch (nodemailerError) {
+    console.error('Email Service Error (both Resend and Nodemailer failed):', nodemailerError);
+    throw nodemailerError;
   }
 };
 
